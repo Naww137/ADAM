@@ -9,7 +9,6 @@ Created on Tue Aug  9 21:29:33 2022
 #%%
 import pandas as pd
 import numpy as np
-import design
 import pixel
 
 pixels = 6
@@ -20,9 +19,6 @@ parameter_df = pd.DataFrame()
 parameter_df['par1'] = np.ones([pixels])
 parameter_df['par2'] = np.ones([pixels])
 
-
-#%%
-#my_opt_parm = design.optimized_parameter(1,2,3)
 
 
 #%%
@@ -78,16 +74,6 @@ region_definition = {'rod':['fuel','moderator'], 'clad':['zircalloy','moderator'
 
 parameter_definition = {'rod':['par1','par2'], 'clad':['par1','par2']}
 
-
-
-#par_def = {'fuel':'par1', 'zircalloy':'par1', 'moderator':'par2'}
-
-# =============================================================================
-# parameter_df = dict.fromkeys(region_definition.keys())
-# for region in region_definition:
-#     parameter_df[f'{region}'] = pd.DataFrame({'par1':par1, 'par2':par2})
-# =============================================================================
-    
     
 parameters = parameter_df.iloc[0]
 
@@ -95,50 +81,17 @@ parameters = parameter_df.iloc[0]
     
 #%%
 
-# =============================================================================
-# # to replace material key with parameter key
-# par_def = {}
-# for region in region_definition:
-#     for i in range(len(region_definition[f'{region}'])):
-#         par_def[f'{region_definition[region][i]}'] = parameter_definition[f'{region}'][i]
-# =============================================================================
 
 
 # make material base a dataframe 
 material_df_base = pd.DataFrame(material_dict_base)
 
 
-# create a dictionary of regions each with a nested dataframe of the materials within that region
-# =============================================================================
-# region_materials_base = dict.fromkeys(region_definition.keys())
-# for region in region_definition:
-#     region_materials_base[f'{region}'] = material_df_base[region_definition[f'{region}']]
-# =============================================================================
-    
-    
-# =============================================================================
-# # create the updated region materials dataframe and replace column material keys with the parameter key to be applied
-# updated_region_materials = dict.fromkeys(region_definition.keys())
-# for region in region_definition:
-#     updated_region_materials[f'{region}'] = material_df_base[region_definition[f'{region}']].rename(columns=par_def)
-# =============================================================================
-
-
-# =============================================================================
-# # apply multiplier
-# for region in region_definition:
-#     for material in updated_region_materials[f'{region}']:
-#         updated_region_materials[f'{region}'][f'{material}'] = updated_region_materials[f'{region}'][f'{material}'] * parameters[f'{material}']
-#     
-# # combine like isotopes 
-# for region in region_definition:
-#     updated_region_materials[f'{region}']['sum'] = updated_region_materials[f'{region}'].sum(axis=1)
-# =============================================================================
     
 
 
 # create scale input string
-
+temp = 300
     
 # initialize pixel array
 pixel_array = []
@@ -148,14 +101,28 @@ for i in range(pixels):
 # update materials based on optimization parameter
 for i in range(pixels):
     pixel_array[i].get_updated_material_definition(parameter_df.iloc[i])
+    pixel_array[i].write_material_string_for_single_pixel(temp)
 
 
 
-#print(mypixel.updated_region_materials['rod']['sum'])
-
-
+def write_pixel_material_strings_to_template(template_file, input_file):
+    
+    with open(template_file, 'r') as f:
+        readlines = f.readlines()
+        f.close()
+        
+    with open(input_file, 'w') as f:
+        for line in readlines:
+            f.write(line)
+            
+            if line.startswith('read composition'):
+                for each_pixel in pixel_array:
+                    f.write(each_pixel.material_string)
+                    
+tempfile = '/Users/noahwalton/Documents/GitHub/ADAM/mini_template.inp'
+inpfile = '/Users/noahwalton/Documents/GitHub/ADAM/test.inp'
         
         
-
+write_pixel_material_strings_to_template(tempfile, inpfile)
 
 # %%
