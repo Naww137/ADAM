@@ -1,240 +1,309 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug  1 20:21:22 2022
+Created on Mon Aug  1 19:33:07 2022
 
 @author: noahwalton
 """
 
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Implementation of the stochastic gradiant descent algorithm
+# # https://en.wikipedia.org/wiki/Stochastic_gradient_descent
+# # And ADAM Gradient Descent
+# # https://arxiv.org/pdf/1412.6980.pdf
+# # Coupled to Scale Tsunami 
+
+# In[1]:
+
+
 import pandas as pd
-import numpy as np
+import os
 import math
+from scipy.linalg import null_space
+import numpy as np
+import random
+import operator
+import pixel
+import pixel_array_functions
+import cluster_interface
+import scale_interface
+import problem_definition
 
-# =============================================================================
-# def adam_gradient_descent_scale(initial_betas,
-#                            debug_print_all = False,
-#                            submit_tsunami_job = True,
-#                            stopping_value = 0.001,
-#                            number_of_steps = 10,
-#                            alpha_value = 0.1, 
-#                            beta_1 = 0.9,
-#                            beta_2 = 0.999,
-#                            epsilon = 1,
-#                            write_output = False,
-#                            write_output_string = "output.csv",
-#                            fix_mass_adjustment = True,
-#                            fix_mass_target = 'initial',
-#                            fix_mass_round_value = 5,
-#                            fix_mass_type='all',
-#                            starting_step = 1,
-#                            initialize_first_and_second_vectors_from_sdf = False,
-#                            initialize_first_and_second_vector_target_sdf_file = "default",
-#                            initialize_first_and_second_vector_target_sdf_betas = [],
-#                            starting_first_moment_vector=[[],[]],
-#                            starting_second_moment_vector=[[],[]],
-#                            materials = ["void", "fuel/moderator:25/75"]):
-# =============================================================================
 
-parameter_df = pd.DataFrame()
-parameter_df['fuel'] = [1,1,1,1,1]
-parameter_df['mod'] = [2,2,2,2,2]
-
-debug_print_all = False
-submit_tsunami_job = True
-stopping_value = 0.001
-number_of_steps = 10
-alpha_value = 0.1
-beta_1 = 0.9
-beta_2 = 0.999
-epsilon = 1
-write_output = False
-write_output_string = "output.csv"
-fix_mass_adjustment = True
-fix_mass_target = 'initial'
-fix_mass_round_value = 5
-fix_mass_type='all'
-starting_step = 1
-initialize_first_and_second_vectors_from_sdf = False
-initialize_first_and_second_vector_target_sdf_file = "default"
-initialize_first_and_second_vector_target_sdf_betas = []
-
-starting_first_moment = pd.DataFrame(np.ones([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
-starting_second_moment = pd.DataFrame(np.ones([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
-
-materials = ["void", "fuel/moderator:25/75"]
+# In[2]:
 
 
 
-
-#%%
-
-def transformation_function(x):
+### This function takes the material betas that describe the geometry, builds the tsunami job and runs it.
+### Then it pulls out the keff and senstivities and converts them into usable form
+### Inputs:
+### material_betas - variables_func is passed in here, it is a list of the multiplying factors directly applied (forcing function already used)
+### materials - list of material dictionaries for each material
+### tsunami_job_flag - string to start tsunami jobs with
+### debug_fake_tsunami_run - skips running tsunami 
+def evaluate_with_Tsunami(parameter_df,
+                          pixel_array,
+                          template_file = 'template.inp',
+                          tsunami_job_flag = "tsunami_job",
+                          build_input = True,
+                          submit_tsunami_job = True,
+                          pull_keff = True,
+                          pull_sensitivities = True,
+                          delete_sdf_sh_NuBar_source = False):
+    """
+    Evaluates the current step.
     
-    y = np.exp(x)
+    This function takes the parameter vector and builds a corresponding TSUNAMI input. 
+    It then runs that input on the UTK cluster. The result is then evaluated. 
+    Sensitivities and other inofrmation are extracted and evaluated s.t. they can be
+    fed to the next step. This includes converting the relative sensitivities to absolute derivatives.
+
+    Parameters
+    ----------
+    parameter_df : TYPE
+        DESCRIPTION.
+    pixel_array : object array
+        Array of pixel objects containing material/region/parameter information.
+    materials : TYPE
+        DESCRIPTION.
+    tsunami_job_flag : TYPE, optional
+        DESCRIPTION. The default is "tsunami_job".
+    build_input : TYPE, optional
+        DESCRIPTION. The default is True.
+    submit_tsunami_job : TYPE, optional
+        DESCRIPTION. The default is True.
+    pull_keff : TYPE, optional
+        DESCRIPTION. The default is True.
+    pull_sensitivities : TYPE, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    keff : TYPE
+        DESCRIPTION.
+    beta_sensitivities : TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+
+    """
     
-    return y
+    
+    ### Building scale input
+    if build_input:
+
+        # generate random number seed
+        random_number = random.randint(1152921504606846976,18446744073709551615)
+        hex_number = str(hex(random_number))
+        hex_number = hex_number [2:]
+        rep_dict_addition = {'%%%random_number%%%':hex_number}
+        
+        print("WARNING: Need to update template file creation to take random number")
+        
+        # use parameter data frame to update the base material dictionary for each pixel in pixel array
+        pixel_array_functions.get_updated_materials_in_pixel_array(pixel_array, parameter_df)
+        
+        # write each pixel's material string to target input file
+        pixel_array_functions.write_material_strings_to_template(pixel_array, template_file, tsunami_job_flag+'.inp')
+
+        # create an .sh file for TORQUE job submission on the UTK NE cluster
+        cluster_interface.build_scale_submission_script(tsunami_job_flag, solve_type = 'tsunami')
+        
+    else:
+        print("Skipping building scale input file.")
+    
 
 
-#%%
-"""
-Executes ADAM gradient descent algorithm at the highest level.
 
-Parameters
-----------
-sensitivities : TYPE
-    DESCRIPTION.
-betas : TYPE
-    DESCRIPTION.
+    ### Submit tsunami job and wait on it to complete
+    
+    if submit_tsunami_job:
+        assert build_input == True, "You didn't build a new input, but you're submitting to the cluster. Quite irregular."
+        cluster_interface.submit_jobs_to_necluster(tsunami_job_flag)
+        cluster_interface.wait_on_submitted_job(tsunami_job_flag)
+    else:
+        print("Not submitting the tsunami job.")
+        
+        
+    
+    
+    
+    ### Pull out keff and sensitivities from Tsunami job
+    
+    output_file = tsunami_job_flag+'.out'
+    # keff, uncert = scale_interface.read_keff(output_file)
+    sensitivity_dictionary, keff = scale_interface.read_total_sensitivity_by_nuclide(output_file)
+    
+    
+    # convert scale IDed sensitivities to sensitivities specific to each pixel/pixel region in the pixel_array
+    pixel_array_functions.get_nuclide_sensitivites_for_each_pixel(pixel_array, sensitivity_dictionary)
+ 
+    
+    
+    ### delete un-necessary_files from the previous job
+    if delete_sdf_sh_NuBar_source:
+        print("Create a function to delete unnecessary files")
 
-Returns
--------
-new_sensitivities : TYPE
-    DESCRIPTION.
+    
+       
+    return keff
 
-"""
 
-steps = starting_step
+# In[3]:
+
+
+
+### Implementation of ADAM gradient descent
+### inputs:
+### initial material betas - list of values from 0-1.0 describing material
+### debug_fake_tsunami_run - Boolean, if True running Tsunami is skipped
+### debug_print_betas- Boolean, if true beta values are printed each step
+### number_of_steps - Int, total number of steps to take with algo
+### alpha_value - Float, Step size, set to default value
+### beta_1 - Float, Decay rate for first moment, set to default value
+### beta_2 - Float, Decay rate for second moment, set to default value
+### epsilon - Float, Small value used to avoid division by zero, set to default value
+### write_output - Boolean, True to write out output
+### null_space_adj - Boolean, if True multiply penultimate values by null vector so that their changes sum to 0
+### materials - List of materials void, (TCR) fuel and moderator. If you want a mixed material the form is:
+###    "material 1 string/material 2 string:fraction material 1/fraction material 2"
+def adam_gradient_descent_scale(parameter_df,
+                               pixel_array, 
+                               debug_print_all = False,
+                               submit_tsunami_job = True,
+                               stopping_value = 0.001,
+                               number_of_steps = 10,
+                               alpha_value = 0.1, 
+                               beta_1 = 0.9,
+                               beta_2 = 0.999,
+                               epsilon = 1,
+                               write_output = False,
+                               write_output_string = "output.csv",
+                               fix_mass_adjustment = True,
+                               fix_mass_target = 'initial',
+                               fix_mass_round_value = 5,
+                               fix_mass_type='all',
+                               starting_step = 1,
+                               starting_first_moment=[],
+                               starting_second_moment=[]):
+    """
+    Executes ADAM gradient descent algorithm at the highest level.
+
+    Parameters
+    ----------
+    sensitivities : TYPE
+        DESCRIPTION.
+    betas : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    new_sensitivities : TYPE
+        DESCRIPTION.
+
+    """
+    
+    steps = starting_step
+      
+    
+    if starting_step > 1:
+        first_moment = starting_first_moment
+        second_moment = starting_second_moment
+    else:   
+        # initializae first/second moment vectors as all 0 for very first step - could be better informed
+        first_moment_vector = pd.DataFrame(np.zeros([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
+        second_moment_vector = pd.DataFrame(np.zeros([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
+       
+       
+    ### Stopping_criteria not implemented currently, only # of steps
+    # stopping_criteria = False
+    # parameters = parameter_df
+       
+    # only write new output csv files if we are starting at step 1
+    if starting_step == 1:
+        if write_output:
+            
+            print("\nWARNING: Need to update print-to-csv functions to be dynamic WRT parameter definitions\n")
+            
+            with open('output.csv', 'w') as output_file:
+                output_file.write("step, keff\n")
+            with open('parameters.csv', 'w') as output_file:
+                # string = 'step, keff,'
+                # string += f' {parameter_df.keys()[0]} [1x{len(parameter_df)}, {parameter_df.keys()[1]} [1x{len(parameter_df)}\n'
+                output_file.write("step, keff, fuel_betas_this_step [1x1936], mod_betas_this_step [1x1936]\n")
+            with open('first_moments.csv', 'w') as output_file:
+                output_file.write("step, keff, fuel_1st_moment_vectors_this_step [1x1936], mod_1st_moment_vectors_this_step [1x1936], fuel_2nd_moment_vectors_this_step [1x1936], mod_2nd_moment_vectors_this_step [1x1936]\n")
+            with open('second_moments.csv', 'w') as output_file:
+                output_file.write("step, keff, fuel_2nd_moment_vectors_this_step [1x1936], mod_2nd_moment_vectors_this_step [1x1936]\n")
+
+       
+    ### Main loop
+    while steps < number_of_steps + 1:
+        
+        print("Step #:", steps)
+        ### 
+        tsunami_job_flag = 'tsunami_job_' + str(steps)
+        
+        # apply a transformation of variables to the domain
+        transformed_parameters = parameter_df.apply(problem_definition.transformation_function)
+         
+        
+        ### Evaluate with TSUNAMI, sensitivities/derivatives stored in pixel_array objects
+        keff = evaluate_with_Tsunami(transformed_parameters,
+                                                             pixel_array,
+                                                             template_file = 'tsunami_template_file_10x10.inp',
+                                                             tsunami_job_flag = tsunami_job_flag,                    
+                                                             submit_tsunami_job = submit_tsunami_job)
+        
+        
+        
+        # combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors
+        print("Need to update documentation to maintain consistent verbiage for multiplication factors or optimization parameters")
+        derivative_df = pixel_array_functions.get_combined_derivatives(pixel_array, material_dict_base)
+       
+        
+        # chain rule for transofrmation function to get derivatives wrt optimization parameters
+        obj_derivative_df = problem_definition.objective_derivative(derivative_df, parameter_df)
+       
+        
+        ### perform the ADAM algorithm update
+        first_moment_df = (beta_1 * first_moment_vector  + (1 - beta_1) * obj_derivative_df)
+        second_moment_df = (beta_2 * second_moment_vector + (1 - beta_2) * obj_derivative_df**2) 
+        first_moment_hat_df = (first_moment_df / (1 - beta_1**steps))
+        second_moment_hat_df = (second_moment_df/ (1 - beta_2**steps))
+       
+        new_parameter_df = (parameter_df + (alpha_value * first_moment_hat_df) / (np.sqrt(second_moment_hat_df) + epsilon))
+                             
+            
+        ### Writing out the output file                                      
+        if write_output:                                        # !!! these variable must be printed this way in order to start at step>1
+            with open(write_output_string, 'a') as output_file:
+                write_string = str(steps) + "," + str(keff)
+                output_file.write(write_string + "\n")
+            with open('parameters.csv', 'a') as par_file:
+                np.savetxt(par_file, [np.array(parameter_df).flatten()], delimiter=',')
+            with open('first_moments.csv', 'a') as fm_file:
+                np.savetxt(fm_file, [np.array(first_moment_df).flatten()], delimiter=',')
+            with open('second_moments.csv', 'a') as sm_file:
+                np.savetxt(sm_file, [np.array(second_moment_df).flatten()], delimiter=',')
+                
+        # redefine parameters as new updated parameters before while loop
+        parameter_df = new_parameter_df
+        steps += 1
+        
  
 
-if starting_step > 1:
-    first_moment = starting_first_moment
-    second_moment = starting_second_moment
-else:   
-    # initializae first/second moment vectors as all 0 for very first step - could be better informed
-    first_moment_vector = pd.DataFrame(np.zeros([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
-    second_moment_vector = pd.DataFrame(np.zeros([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
+
+# In[4]:
 
 
-### Stopping_criteria not implemented currently, only # of steps
-stopping_criteria = False
-parameters = parameter_df
-
-# only write new output csv files if we are starting at step 1
-if starting_step == 1:
-    if write_output:
-        with open('output.csv', 'w') as output_file:
-            output_file.write("step, keff\n")
-        with open('parameters.csv', 'w') as output_file:
-            output_file.write("step, keff, fuel_betas_this_step [1x1936], mod_betas_this_step [1x1936]\n")
-        with open('moments.csv', 'w') as output_file:
-            output_file.write("step, keff, fuel_1st_moment_vectors_this_step [1x1936], mod_1st_moment_vectors_this_step [1x1936], fuel_2nd_moment_vectors_this_step [1x1936], mod_2nd_moment_vectors_this_step [1x1936]\n")
-
-
-### Main loop
-while steps == 1: # < number_of_steps + 1:
-    
-    print("Step #:", steps)
-    ### 
-    tsunami_job_flag = 'tsunami_job_' + str(steps)
-    
-    transformed_parameters = transformation_function(parameters)
-    
-    
-    
-    steps += 1
-    
-    
-    
-    
-    #%%
-    
-    ### Evaluate with TSUNAMI
-    keff, beta_sensitivities, material_1_sense, material_2_sense = evaluate_with_Tsunami(variables_func,
-                                                         tsunami_job_flag = tsunami_job_flag,                    
-                                                         submit_tsunami_job = submit_tsunami_job,
-                                                         materials = materials)
-
-     
-    ### Mulitplying %keff derives by keff
-
-    #beta_sensitivities = [float(deriv * float(keff)) for deriv in beta_sensitivities]
-    print(sum(variables_func[0]))
-    print(sum(variables_func[1]))
-   
-   # put through sensitivity of obj function - now we have a penalty on extremely small betas
-    beta_sensitivities = sensitivity_function(beta_sensitivities, variables)
-   
-    
-    first_moment_vector_hat=[[],[]]
-    second_moment_vector_hat=[[],[]]
-    new_variables=[[],[]]  
-    ### Implementation of ADAM gradient descent
-    for i in range(2):
-        first_moment_vector[i] = [(beta_1 * first_mv  + (1 - beta_1) * deriv) for first_mv, deriv in zip(first_moment_vector[i], beta_sensitivities[i])]
-        second_moment_vector[i] = [(beta_2 * second_mv + (1 - beta_2) * deriv**2) for second_mv, deriv in zip(second_moment_vector[i], beta_sensitivities[i])]
-        first_moment_vector_hat[i] = [(first_mv / (1 - beta_1**steps)) for first_mv in first_moment_vector[i]]
-        second_moment_vector_hat[i] = [(second_mv/ (1 - beta_2**steps)) for second_mv in second_moment_vector[i]]
-        new_variables[i] = [(beta + (alpha_value * first_mv) / (math.sqrt(second_mv) + epsilon)) for
-                         beta, first_mv, second_mv in zip(variables[i], first_moment_vector_hat[i], second_moment_vector_hat[i])]
-    
-    
-    
-    if fix_mass_adjustment:    
-        new_variables = fixed_mass_adjustment(new_variables,
-                                              target_mass, 
-                                              beta_sensitivities,
-                                              fix_mass_type,
-                                              debug=debug_print_all,
-                                              mass_round_dig = fix_mass_round_value)
-    new_variables = np.array(new_variables)
-
-    if debug_print_all:
-        debug_write_out_10x10_list(beta_sensitivities, "beta_sensitivities")
-        debug_write_out_10x10_list(first_moment_vector, "first_moment_vector")
-        debug_write_out_10x10_list(second_moment_vector, "second_moment_vector")
-        debug_write_out_10x10_list(first_moment_vector_hat, "first_moment_vector_hat")
-        debug_write_out_10x10_list(second_moment_vector_hat, "second_moment_vector_hat")
-        debug_write_out_10x10_list(variables, "variables")
-        debug_write_out_10x10_list(new_variables, "new_variables_final")
-        
-        
-    ### Writing out the output file   
-    #! redo this to write steps and keff, betas, and moment vectors separately                                       
-    if write_output:                                        # !!! these variable must be printed this way in order to start at step>1
-        with open(write_output_string, 'a') as output_file:
-            write_string = str(steps) + "," + str(keff)
-            
-            for _ in variables[0]:                      
-                write_string += "," + str(_)
-            
-            for _ in variables[1]:                      
-                write_string += "," + str(_)
-                
-            for _ in first_moment_vector[0]:
-                write_string += "," + str(_)
-                
-            for _ in first_moment_vector[1]:
-                write_string += "," + str(_)
-                
-            for _ in second_moment_vector[0]:
-                write_string += "," + str(_)
-                
-            for _ in second_moment_vector[1]:
-                write_string += "," + str(_)
-            
-            output_file.write(write_string + "\n")
-    steps += 1 
-    print('Keff')  
-    print(keff_old)
-    print(keff)
-    if (float(keff_old)<float(keff)):
-        variables = new_variables           # new variables are not run yet
-        alpha_value=alpha_value*1.0
-        keff_old=keff
-    else:
-        variables = new_variables
-        alpha_value=alpha_value*1.0
-        keff_old=keff
-
-    print(alpha_value)
-
-
-# In[9]:
-
-
-### Building initial beta values
+### Building initial parameter dataframe
 #material_betas = build_initial_betas(1, 2, 'random', rand_min = 0.2, rand_max = 0.8)
-number_used=61
+number_of_pixels = 100
 
 
 # =============================================================================
@@ -244,106 +313,81 @@ number_used=61
 starting_step = 1
 Non_Uniform_Start = True
 
-# p1 solution
-fb = -2.4001086204461104
-mb = -1.8978802738322902
-zb = -15
-
-# p1 sanity check
-# =============================================================================
-# fb = -2.2603464290159994
-# mb = -1.8683184827943493
-# zb = -50
-# =============================================================================
-
-# optimal circle search results
-fb = -1.745323
-mb = -1.147416
-zbf = -6
-zbm = -6
 
 if starting_step == 1:
     
-    material_betas_start=[[],[]]
-    
-    # default function inputs if not initializing
-    initialize_boolean=False; initialize_file= "default"; initialize_betas=[]
-    initialize_first_moment_vectors = [[],[]]; initialize_second_moment_vectors=[[],[]]
-    
-    if Non_Uniform_Start:               ## forcing function is exponential e^beta = atom dens scaling factor
-        # fuel betas
-        material_betas_start[0] = [zbf, zbf, zbf, zbf, zbf, zbf, zbf, zbf, zbf, zbf,
-                                   zbf, zbf, zbf,  fb,  fb,  fb,  fb, zbf, zbf, zbf,
-                                   zbf, zbf,  fb,  fb,  fb,  fb,  fb,  fb, zbf, zbf,
-                                   zbf,  fb,  fb,  fb,  fb,  fb,  fb,  fb,  fb, zbf,
-                                   zbf,  fb,  fb,  fb,  fb,  fb,  fb,  fb,  fb, zbf,
-                                   zbf,  fb,  fb,  fb,  fb,  fb,  fb,  fb,  fb, zbf,
-                                   zbf,  fb,  fb,  fb,  fb,  fb,  fb,  fb,  fb, zbf,
-                                   zbf, zbf,  fb,  fb,  fb,  fb,  fb,  fb, zbf, zbf,
-                                   zbf, zbf, zbf,  fb,  fb,  fb,  fb, zbf, zbf, zbf,
-                                   zbf, zbf, zbf, zbf, zbf, zbf, zbf, zbf, zbf, zbf,]
-        # mod betas
-        material_betas_start[1] = [mb,  mb,  mb,  mb,  mb,  mb,  mb,  mb,  mb, mb,
-                                   mb,  mb,  mb, zbm, zbm, zbm, zbm,  mb,  mb, mb,
-                                   mb,  mb, zbm, zbm, zbm, zbm, zbm, zbm,  mb, mb,
-                                   mb, zbm, zbm, zbm, zbm, zbm, zbm, zbm, zbm, mb,
-                                   mb, zbm, zbm, zbm, zbm, zbm, zbm, zbm, zbm, mb,
-                                   mb, zbm, zbm, zbm, zbm, zbm, zbm, zbm, zbm, mb,
-                                   mb, zbm, zbm, zbm, zbm, zbm, zbm, zbm, zbm, mb,
-                                   mb,  mb, zbm, zbm, zbm, zbm, zbm, zbm,  mb, mb,
-                                   mb,  mb,  mb, zbm, zbm, zbm, zbm,  mb,  mb, mb,
-                                   mb,  mb,  mb,  mb,  mb,  mb,  mb,  mb,  mb, mb,]
-    else:
-        material_betas_start[0] = build_initial_betas(10, 10, 'fixed', fixed_value = -2)
-        material_betas_start[1] = build_initial_betas(10, 10, 'fixed', fixed_value = -2)
-        
-        
-    
+    parameter_df = pd.DataFrame()
+    parameter_df['optimization_parameter_1'] = np.ones([number_of_pixels])
+    parameter_df['optimization_parameter_2'] = np.ones([number_of_pixels])
+
 else:
-    
-    data = np.genfromtxt('output.csv', delimiter=',', skip_header=1, usecols=range(2,602))
-    material_betas_start=[[],[]]
-    material_betas_start[0] = data[-1, 0:100]
-    material_betas_start[1] = data[-1, 100:200]  
-    
-# =============================================================================
-#     for mat in range(2):
-#         material_betas_start[mat] = [-20 if beta < -20 else beta for beta in material_betas_start[mat]]
-#         material_betas_start[mat] = [20 if beta > 20 else beta for beta in material_betas_start[mat]]
-# =============================================================================
-            
-    initialize_first_moment_vectors = [[],[]]; initialize_second_moment_vectors=[[],[]]
-    initialize_first_moment_vectors[0] = data[-1,200:300]; initialize_first_moment_vectors[1] = data[-1,300:400]
-    initialize_second_moment_vectors[0] = data[-1,400:500]; initialize_second_moment_vectors[1] = data[-1,500:600]
-    
-    # function inputs if initializing
-    initialize_boolean=True
-    initialize_file= 'tsunami_job_' + str(starting_step-1) +'.sdf'
-    initialize_betas=material_betas_start
-    
+     _ = 0
 
 
+material_dict_base = {'fuel':{
+                             'u-235':8.59435E-04,
+                             'u-238':2.23686E-02,
+                             'o-16':4.64708E-02},
+                'zircalloy':{
+                            'cr-50':3.62373E-06,
+                            'cr-52':6.98800E-05,
+                            'cr-53':7.92383E-06},
+                  'moderator':{
+                              'o-16':3.3368E-02,
+                              'h-1':6.6733E-02}  
+                                                  }
+
+# make material base a dataframe 
+material_df_base = pd.DataFrame(material_dict_base)
+
+
+# define geometric regions (repeating regions in this case) and the materials present within each
+
+# region_definition = {'rod':['fuel','moderator'], 'clad':['zircalloy','moderator']}
+region_definition = {'whole_pixel':['fuel','moderator']}
+
+# define the parameters that will be applied to each material in each goemetric region
+
+#parameter_definition = {'rod':['optimization_parameter_1','optimization_parameter_2'], 'clad':['optimization_parameter_1','optimization_parameter_2']}
+parameter_definition = {'whole_pixel':['optimization_parameter_1','optimization_parameter_2']}
+
+
+
+print("\nPlease confirm the following region, material, and parameter defnitions:\n")
+for region in region_definition.keys():
+    for material, parameter in zip(region_definition[f'{region}'], parameter_definition[f'{region}']):
+        print(f'For region "{region}" the material "{material}" will be controlled by {parameter}')
+        
+        
+pixel_array = pixel_array_functions.initialize_pixel_array(number_of_pixels, region_definition, parameter_definition, material_df_base, 300)
+        
+
+
+
+# In[5]:
 
 # =============================================================================
 # ### running adam gradient descent algorithm
 # =============================================================================
-adam_gradient_descent_scale(material_betas_start,
-                       submit_tsunami_job=False,
-                       debug_print_all = False,
-                       alpha_value = 0.1,
-                       beta_1=0.9,
-                       number_of_steps = 4,
-                       write_output = True,
-                       epsilon = 1e-8,
-                       fix_mass_adjustment = False,
-                       fix_mass_target = 'initial',
-                       fix_mass_round_value = 5,
-                       
-                       starting_step = starting_step,
-                       initialize_first_and_second_vectors_from_sdf = initialize_boolean,
-                       initialize_first_and_second_vector_target_sdf_file = initialize_file,
-                       initialize_first_and_second_vector_target_sdf_betas = initialize_betas,
-                       starting_first_moment_vector=initialize_first_moment_vectors,
-                       starting_second_moment_vector=initialize_second_moment_vectors,
-                       
-                       materials = ["fuel","moderator"])
+adam_gradient_descent_scale(parameter_df,
+                           pixel_array, 
+                           submit_tsunami_job=False,
+                           debug_print_all = False,
+                           alpha_value = 0.1,
+                           beta_1=0.9,
+                           number_of_steps = 1,
+                           write_output = True,
+                           epsilon = 1e-8,
+                           fix_mass_adjustment = False,
+                           fix_mass_target = 'initial',
+                           fix_mass_round_value = 5,
+                           
+                           starting_step = starting_step,
+                           
+                           starting_first_moment = [],
+                           starting_second_moment = [])
+
+
+    
+
+    

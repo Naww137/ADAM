@@ -10,14 +10,16 @@ Created on Tue Aug  9 21:29:33 2022
 import pandas as pd
 import numpy as np
 import pixel
+import functions
+import cluster_interface
 
-pixels = 6
+number_of_pixels = 6
 
 
 # take in parameters that are being optimized by ADAM!
 parameter_df = pd.DataFrame()
-parameter_df['par1'] = np.ones([pixels])
-parameter_df['par2'] = np.ones([pixels])
+parameter_df['par1'] = np.ones([number_of_pixels])
+parameter_df['par2'] = np.ones([number_of_pixels])
 
 
 
@@ -74,17 +76,19 @@ region_definition = {'rod':['fuel','moderator'], 'clad':['zircalloy','moderator'
 
 parameter_definition = {'rod':['par1','par2'], 'clad':['par1','par2']}
 
-    
-parameters = parameter_df.iloc[0]
-
-    
-    
-#%%
-
-
 
 # make material base a dataframe 
 material_df_base = pd.DataFrame(material_dict_base)
+    
+
+print("Please confirm the following region, material, and parameter defnitions")
+for region in region_definition.keys():
+    for material, parameter in zip(region_definition[f'{region}'], parameter_definition[f'{region}']):
+        print(f'For region "{region}" the material "{material}" will be controlled by {parameter}')
+
+#%%
+
+
 
 
     
@@ -93,36 +97,37 @@ material_df_base = pd.DataFrame(material_dict_base)
 # create scale input string
 temp = 300
     
-# initialize pixel array
-pixel_array = []
-for i in range(pixels):
-    pixel_array.append(pixel.pixel(region_definition, parameter_definition, material_df_base, i+1))
 
-# update materials based on optimization parameter
-for i in range(pixels):
-    pixel_array[i].get_updated_material_definition(parameter_df.iloc[i])
-    pixel_array[i].write_material_string_for_single_pixel(temp)
+pixel_array = functions.initialize_pixel_array(number_of_pixels, region_definition, parameter_definition, material_df_base, temp)
 
-
-
-def write_pixel_material_strings_to_template(template_file, input_file):
+functions.get_updated_materials_in_pixel_array(pixel_array, parameter_df)
     
-    with open(template_file, 'r') as f:
-        readlines = f.readlines()
-        f.close()
-        
-    with open(input_file, 'w') as f:
-        for line in readlines:
-            f.write(line)
-            
-            if line.startswith('read composition'):
-                for each_pixel in pixel_array:
-                    f.write(each_pixel.material_string)
+
+
                     
 tempfile = '/Users/noahwalton/Documents/GitHub/ADAM/mini_template.inp'
 inpfile = '/Users/noahwalton/Documents/GitHub/ADAM/test.inp'
         
         
-write_pixel_material_strings_to_template(tempfile, inpfile)
+functions.write_material_strings_to_template(pixel_array, tempfile, inpfile)
+
+
+
 
 # %%
+
+
+import cluster_interface_object
+
+
+
+
+cluster_inteface = cluster_interface_object()
+
+
+
+
+
+
+
+
