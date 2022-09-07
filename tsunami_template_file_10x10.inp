@@ -344,19 +344,32 @@ ara=1 nux=10 nuy=10  nuz=1 fill
 71 72 73 74 75 76 77 78 79 80
 81 82 83 84 85 86 87 88 89 90
 91 92 93 94 95 96 97 98 99 100
-
 end array
+
 read boundary  
 all=reflect
 end boundary
+
 end data
+
+
+read sams
+nohtml
+' prtimp
+
+end sams
+
 end
+
+
 =mt2msl
 'fissionSource.3dmap'
 1
 0
 fissionSource.msl
 end
+
+
 =shell
 cp fissionSource.msl "${INPDIR}/fissionSource.msl"
 end
