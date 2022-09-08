@@ -93,7 +93,9 @@ def wait_on_submitted_job(file_name_flag):
         total_time += 30
         time.sleep(30)
         
-        
+
+def remove_unwanted_files():
+    os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *.html *.htmd *.sh* *.sdf *.txt *.3dmap')
         
 
 

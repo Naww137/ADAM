@@ -73,7 +73,7 @@ def get_updated_materials_in_pixel_array(pixel_array, parameter_df):
         pixel_array[i].write_material_string()
         
         
-def write_material_strings_to_template(pixel_array, template_file, input_file):
+def write_material_strings_to_template(pixel_array, input_file):
     """
     Write updated material strings for each pixel in pixel_array to an input file.
 
@@ -81,8 +81,6 @@ def write_material_strings_to_template(pixel_array, template_file, input_file):
     ----------
     pixel_array : object array
         Array of pixel objects.
-    template_file : string
-        Filename of input template.
     input_file : string
         Filename of the input file to be created.
 
@@ -92,7 +90,7 @@ def write_material_strings_to_template(pixel_array, template_file, input_file):
 
     """
     
-    with open(template_file, 'r') as f:
+    with open(input_file, 'r') as f:
         readlines = f.readlines()
         f.close()
         
@@ -107,10 +105,10 @@ def write_material_strings_to_template(pixel_array, template_file, input_file):
                 
 def get_nuclide_sensitivites_for_each_pixel(pixel_array, sensitivity_dictionary):
     """
-    Converts sensitivity data from scale material numbering/id scheme to object oriented.
+    Converts sensitivity/derivative data from scale material numbering/id scheme to object oriented.
     
-    This function takes the sensitivity_dictionary produced by scale_interface.read_total_sensitivity_by_nuclide() and parses 
-    the data into each pixel object and the respective regions within. The result is a new attribute in each pixel object, this attirbute 
+    This function takes the sensitivity_dictionary produced by scale_interface.read_total_sensitivity_by_nuclide() and assigns 
+    the data to each pixel object and the respective regions within. The result is a new attribute in each pixel object that houses the derivative information for that step, this attirbute 
     is a dictionary titled "sensitivity_data_by_nuclide" and has the form {region:{isotope:(sensitivity, uncertainty, atom_density, absolute_sensitivity)}}.
 
     Parameters
@@ -132,10 +130,7 @@ def get_nuclide_sensitivites_for_each_pixel(pixel_array, sensitivity_dictionary)
         
         for i, region in enumerate(each_pixel.region_definition):
             scale_material_id = each_pixel.pixel_id*10 + i
-
-            for material, optimization_parameter in zip(each_pixel.region_definition[f'{region}'], each_pixel.parameter_definition[f'{region}']):
-                each_pixel.sensitivity_data_by_nuclide[region] = sensitivity_dictionary[scale_material_id]
-                    
+            each_pixel.sensitivity_data_by_nuclide[region] = sensitivity_dictionary[scale_material_id]
                 
                 
                 

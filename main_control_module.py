@@ -20,208 +20,30 @@ Created on Mon Aug  1 19:33:07 2022
 
 import pandas as pd
 import os
-import file_handler
 import math
 from scipy.linalg import null_space
 import numpy as np
 import random
-import operator
+import pixel
+import pixel_array_functions
+import cluster_interface
+import scale_interface
+import problem_definition
 
 
 # In[2]:
 
 
-### This function turns a set a of beta values into a runable scale input
-def build_scale_input_from_beta(scale_handler,
-                                parameter_vector,
-                                material_1,
-                                material_2,
-                                template_file_string,
-                                flag,
-                                flag_replacement_string='replace',
-                                temperature=300,
-                                material_count_offset=1,
-                                file_name_flag='default_',
-                                replacement_dict_addition = ''):
-    """
-    Builds scale inputs from a set of parameter values.
-
-    Parameters
-    ----------
-    scale_handler : TYPE
-        DESCRIPTION.
-    parameter_vector : TYPE
-        DESCRIPTION.
-    material_1 : TYPE
-        DESCRIPTION.
-    material_2 : TYPE
-        DESCRIPTION.
-    template_file_string : TYPE
-        DESCRIPTION.
-    flag : TYPE
-        DESCRIPTION.
-    flag_replacement_string : TYPE, optional
-        DESCRIPTION. The default is 'replace'.
-    temperature : TYPE, optional
-        DESCRIPTION. The default is 300.
-    material_count_offset : TYPE, optional
-        DESCRIPTION. The default is 1.
-    file_name_flag : TYPE, optional
-        DESCRIPTION. The default is 'default_'.
-    replacement_dict_addition : TYPE, optional
-        DESCRIPTION. The default is ''.
-
-    Returns
-    -------
-    None.
-
-    """
-
-    material_list = []
-    #print(material_betas)
-    print('here')
-    for i in range(len(parameter_vector[0])):         # !!! each isotope is multiplied by its material beta 
-        material_list.append(scale_handler.combine_material_dicts(material_1, material_2, parameter_vector[0][i], parameter_vector[1][i])) 
-        #print(beta)
-    print('here')
-    # material_list.append(scale_handler.combine_material_dicts(material_1, "", material_betas[0]))
-    # material_list.append(scale_handler.combine_material_dicts(material_2, "void", material_betas[1]))
-
-
-    material_string_list = []
-    for count, material in enumerate(material_list):
-        material_string_list.append(
-            scale_handler.build_scale_material_string(material, count + material_count_offset, temperature))
-
-    ### Making list of keys
-    flag_list = []
-    for x in range(len(material_string_list)):
-        flag_list.append(flag.replace(flag_replacement_string, str(x)))
-
-    material_dict = scale_handler.make_data_dict(flag_list, material_string_list)
-    
-    for flag in replacement_dict_addition:
-        material_dict[flag] = replacement_dict_addition[flag]
-
-    scale_handler.create_scale_input_given_target_dict(template_file_string, file_name_flag, material_dict)
-
-### This function takes a list of materials in each material type and sums
-### the sensitivites for each. 
-### Inputs:
-### materials_list - list of dictionaries in with the form {"isotope":nuclear density,...}
-### sensitivities - nested dictionaries
-### material_betas passed in is the multiplication factors directly applied to the previous atom densities (forcing function has already been applied)
-def combine_sensitivities_make_absolute(materials_list, keff, material_betas, sensitivities):
-    #print(materials_list)
-    #print(sensitivities)
-    material_sens_lists = []
-
-    ### Sum all sensitivities for each material dictionary in the list of materials
-    for material_dict in materials_list:
-        ### Sum all poison and fuel/mod sensitivities
-        sensitivity_sum_list = []
-        for material_loc in sensitivities:
-
-            if material_loc == '0':
-                #print("SKIPPING TOTAL SENSITIVITY")
-                continue
-
-            sum_ = 0.0
-
-# current error where rel to abs factor is so large in magnitude
-# =============================================================================            
-            for isotope in material_dict:
-                
-                # !!! need to multiply by k/N to get absolute partial derivative from relative partial -> rel_to_abs_factor
-                
-                if len(material_dict) > 2:          # case for fuel material (len=5)
-                
-                ## material betas here are already exponentiated... can N be per barn-cm because it is here
-                    rel_to_abs_factor = float(keff)/(float(material_dict[isotope])*material_betas[0][abs(int(material_loc))-1]) 
-                                
-                    if isotope == 'o-16':
-                        sum_ += 2*float(sensitivities[material_loc][isotope]['sensitivity'])*rel_to_abs_factor
-                    elif isotope == 'u-234':
-                        sum_ += 1*0.0002807253944191792*float(sensitivities[material_loc][isotope]['sensitivity'])*rel_to_abs_factor
-                    elif isotope == 'u-235':
-                        sum_ += 1*0.030374487676155186*float(sensitivities[material_loc][isotope]['sensitivity'])*rel_to_abs_factor
-                    elif isotope == 'u-236':
-                        sum_ += 1*0.00011229015776767166*float(sensitivities[material_loc][isotope]['sensitivity'])*rel_to_abs_factor
-                    elif isotope == 'u-238':
-                        sum_ += 1*0.969232496771658*float(sensitivities[material_loc][isotope]['sensitivity'])*rel_to_abs_factor
-                        
-                else:                               # case for moderator material
-                
-                    rel_to_abs_factor = float(keff)/(float(material_dict[isotope])*material_betas[1][abs(int(material_loc))-1])
-                    
-                    if isotope == 'h-1':
-                        sum_ += 2*float(sensitivities[material_loc][isotope]['sensitivity'])*rel_to_abs_factor
-                    else:
-                        sum_ += float(sensitivities[material_loc][isotope]['sensitivity'])*rel_to_abs_factor
-                        
-            sensitivity_sum_list.append(sum_)
-# =============================================================================
-
-        material_sens_lists.append(sensitivity_sum_list)
-
-    return material_sens_lists   # returns 2 arrays of 100 location sensitivities [fuel, mod]
-
-
-
-### This function takes the d%keff/d%material_change and turns them into d%keff/dbeta
-### Inputs:
-### tsunami_betas: List of beta values from 0-1
-### material_1 and 2_sensitivities: the total tsunami sensitivities from calculation
-### beta_diff is the amount added and subtracted to beta values
-def calculate_sensitivities_2_materials_general(tsunami_betas,                                          # !!!!! not used anywhere !!!!!
-                                                material_1_sensitivities,
-                                                material_2_sensitivities,
-                                                beta_diff = 0.01):
-    sensitivities = []
-    for mat_count, material_1_sensitivity in enumerate(material_1_sensitivities):
-        material_2_sensitivity = material_2_sensitivities[mat_count]
-        beta_ = tsunami_betas[mat_count]
-
-        ### Calculating percent change in poison
-        ###     Calculating % change in each material
-        x_1_material_1_beta_change_percent = (beta_ + beta_diff) / beta_ - 1
-        
-        x_1_material_2_beta_change_percent = (1 - beta_ - beta_diff) / (1 - beta_) - 1
-
-        x_2_material_1_beta_change_percent = (beta_ - beta_diff ) / beta_ - 1
-        x_2_material_2_beta_change_percent = (1 - beta_ + beta_diff) / (1 - beta_) - 1
-        
-
-        ###     Multiplying the percent change in beta by the sensitivity 
-        ###     per % change in beta.
-        y_1 = x_1_material_1_beta_change_percent * material_1_sensitivity +               x_1_material_2_beta_change_percent * material_2_sensitivity
-
-        y_2 = x_2_material_1_beta_change_percent * material_1_sensitivity +               x_2_material_2_beta_change_percent * material_2_sensitivity
-
-        ###    
-        x_1 = beta_ + beta_diff
-        x_2 = beta_ - beta_diff
-        
-        ### Adding calculating d% sensitivity/dbeta 
-        sensitivities.append((y_2 - y_1) / (x_2 - x_1))
-    return sensitivities
-
-
-
-
-### This function takes the material betas that describe the geometry, builds the tsunami job and runs it.
-### Then it pulls out the keff and senstivities and converts them into usable form
-### Inputs:
-### material_betas - variables_func is passed in here, it is a list of the multiplying factors directly applied (forcing function already used)
-### materials - list of material dictionaries for each material
-### tsunami_job_flag - string to start tsunami jobs with
-### debug_fake_tsunami_run - skips running tsunami 
-def evaluate_with_Tsunami(parameter_df,
-                          tsunami_job_flag = "tsunami_job",
-                          build_input = True,
-                          submit_tsunami_job = True,
-                          pull_keff = True,
-                          pull_sensitivities = True):
+def evaluate(parameter_df,
+            pixel_array,
+            steps,
+            template_file = 'template.inp',
+            job_flag = "tsunami_job",
+            build_input = True,
+            submit_job = True,
+            pull_keff = True,
+            pull_sensitivities = True,
+            delete_excess_run_files = False):
     """
     Evaluates the current step.
     
@@ -234,6 +56,8 @@ def evaluate_with_Tsunami(parameter_df,
     ----------
     parameter_df : TYPE
         DESCRIPTION.
+    pixel_array : object array
+        Array of pixel objects containing material/region/parameter information.
     materials : TYPE
         DESCRIPTION.
     tsunami_job_flag : TYPE, optional
@@ -260,377 +84,89 @@ def evaluate_with_Tsunami(parameter_df,
 
     """
     
-    # convert dataframe to legacy dictionary structure
-    parameter_vector = list(list(parameter_df.to_numpy().T))
-    materials = list(parameter_df.columns)
     
     
-    sfh = file_handler.scale_file_handler()
-    default_material_list = sfh.build_material_dictionaries(materials, multiplier = 1.0)
+    ### Use parameter data frame to update the base material dictionary for each pixel in pixel array
+    pixel_array_functions.get_updated_materials_in_pixel_array(pixel_array, parameter_df)
+    
+    
+    
     
     ### Building scale input
+    
     if build_input:
+
+        # generate random number seed
         random_number = random.randint(1152921504606846976,18446744073709551615)
         hex_number = str(hex(random_number))
         hex_number = hex_number [2:]
-        rep_dict_addition = {'%%%random_number%%%':hex_number}
-
-        build_scale_input_from_beta(sfh,
-                                     parameter_vector=parameter_vector,
-                                     material_1=default_material_list[0],
-                                     material_2=default_material_list[1],
-                                     flag="%material_replace%",
-                                     flag_replacement_string='replace',
-                                     template_file_string="tsunami_template_file_10x10.inp",
-                                     file_name_flag=tsunami_job_flag,
-                                     replacement_dict_addition = rep_dict_addition)
-        sfh.build_scale_submission_script(tsunami_job_flag, solve_type = 'tsunami')
+        
+        # create input file from template file
+        scale_interface.create_tsunami_input(template_file, job_flag+'.inp', steps, hex_number)
+        
+        # write each pixel's material string to target input file
+        pixel_array_functions.write_material_strings_to_template(pixel_array, job_flag+'.inp')
+    
+        # create an .sh file for TORQUE job submission on the UTK NE cluster
+        cluster_interface.build_scale_submission_script(job_flag, solve_type = 'tsunami')
         
     else:
         print("Skipping building scale input file.")
     
 
-    if submit_tsunami_job:
+
+
+    ### Submit tsunami job and wait on it to complete
+    
+    if submit_job:
         assert build_input == True, "You didn't build a new input, but you're submitting to the cluster. Quite irregular."
-        sfh.submit_jobs_to_necluster(tsunami_job_flag)
-        sfh.wait_on_submitted_job(tsunami_job_flag)
+        cluster_interface.submit_jobs_to_necluster(job_flag)
+        cluster_interface.wait_on_submitted_job(job_flag)
     else:
         print("Not submitting the tsunami job.")
+        
+        
     
-    ### Pulling out keff from Tsunami job
-    if pull_keff:
-        print("    Pulling keff")
-        ### Checking if tsunami_jog_flag has ".out" at the end, if not, add it.
-        if tsunami_job_flag.endswith('.out') == False:
-            keff_filename = tsunami_job_flag + ".out"
-        else:
-            keff_filename = tsunami_job_flag
-            
-        keff, uncert = sfh.get_keff_and_uncertainty(keff_filename)
-    else:
-        print("Faking keff")
-        keff = 0.0
     
-    ### Pulling out sensitivities and turning them into dk/k/dB 
-    if pull_sensitivities:
-        print("    Pulling sensitivities")
-        
-        ### Checking if tsunami_jog_flag has ".sdf" at the end, if not, add it.
-        if tsunami_job_flag.endswith('.sdf') == False:
-            sdf_filename = tsunami_job_flag + ".sdf"
-        else:
-            sdf_filename = tsunami_job_flag
-        
-        material_derivatives = combine_sensitivities_make_absolute(default_material_list, keff, parameter_vector,      # returns 2 lists of 100 locational sensitivities [fuel,mod]
-                                                              sfh.parse_sdf_file_into_dict(sdf_filename))
-        
-        # convert material sensitivities to pd dataframe for output
-        derivative_df = pd.DataFrame(np.array(material_derivatives).T, columns=materials)
-        
+    ### Pull out keff and sensitivities from job
+    
+    output_file = job_flag+'.out'
+    sensitivity_dictionary, keff = scale_interface.read_total_sensitivity_by_nuclide(output_file)
+    
+    # convert scale IDed sensitivities to sensitivities specific to each pixel/pixel region in the pixel_array
+    pixel_array_functions.get_nuclide_sensitivites_for_each_pixel(pixel_array, sensitivity_dictionary)
+ 
+    
+    
+    
+    ### Delete un-necessary_files from the previous job
+    
+    if delete_excess_run_files:
+        cluster_interface.remove_unwanted_files()
+
+    
        
-    return keff, derivative_df
-
-# In[5]:
+    return keff
 
 
-### inputs:
-### x_dim, y_dim - X and Y size of beta matrix
-### build_type - "fixed" for applying "fixed_value" to each location, "random" for uniformly distributed random values 
-def build_initial_betas(x_dim, y_dim, build_type, rand_min = 0.0, rand_max = 1.0, fixed_value = 0.5):
-    material_betas = []
-    for x in range(x_dim):
-        for y in range(y_dim):
-            if build_type == 'random':
-                material_betas.append(random.uniform(rand_min, rand_max))
-            if build_type == 'fixed':
-                material_betas.append(fixed_value)
-    return material_betas
-
-def debug_write_out_10x10_list(list_, string_):
-    print("Writing out: ", string_, len(list_))
-    write_string = ""
-    count = 0
-    for value in list_:
-        write_string += str(value) + ","
-        if count == 10:
-            print("")
-            count = 0
-        count += 1
-    print(string_, len(list_), write_string)
-
-# In[6]:
-
-
-### This function takes the gradient descent step. checks if the values stay between 0.99 and 0.01
-### inputs:
-### variables
-### negative sensitivities
-### step_size
-def calculate_new_variables(variables, negative_sensitivities, step_size):
-    new_variables = [float(variable_ + step_size * deriv_) for variable_, deriv_ in zip(variables, negative_sensitivities)]
-    
-    ### Checking if variables meet variable requirement
-    new_new_variables = []
-    for variable in new_variables:
-        if variable > 1.0:
-            variable = 0.99
-        if variable < 0.0:
-            variable = 0.01
-        new_new_variables.append(variable)
-        
-    return new_new_variables
-
-# In[7]:
-
-
-#gradient_descent_scale(material_betas,
-#                       debug_fake_tsunami_run = True,
-#                       debug_print_betas = True,
-#                       step_size_type = 'sqrt_n_mult#1',
-#                       number_of_steps = 10,
-#                       write_output = True,
-#                       null_space_adj = True,
-#                      materials = ["void", "fuel/moderator:25/75"])
-
-
-# In[8]:
-
-
-### Implementation of ADAM gradient descent
-### https://arxiv.org/pdf/1412.6980.pdf
-
-### Function which takes the list of beta values, checks to see if the values are above or below limits and sets them to
-### those limits
-def check_beta_values(betas, min_val = 0.01, max_val = 0.99):
-    new_betas = []
-    for val in betas:
-        if val > max_val:
-            val = max_val
-        if val < min_val:
-            val = min_val
-        new_betas.append(val)
-    return new_betas
-
-def adjust_max_betas(betas,sensitivities,mass_adjust,typ='all'):
-    #print(sum(betas))
-    
-    if typ=='all':
-        beta_pair=np.zeros([len(betas),3])
-        for i in range(len(betas)):
-            beta_pair[i,0]=betas[i]
-            beta_pair[i,1]=sensitivities[i]
-            beta_pair[i,2]=i+1
-            
-        #print(beta_pair)
-        beta_pair=sorted(beta_pair,key=operator.itemgetter(1))
-        #print(beta_pair)
-        adjust_slope=(mass_adjust/121)
-        
-        for i in range(len(betas)):
-            #print(beta_pair[i][0])
-            beta_pair[i][0]=beta_pair[i][0]-adjust_slope+adjust_slope*((i)/121)
-            #print(beta_pair[i][0])
-        #print(beta_pair)
-        beta_pair=sorted(beta_pair,key=operator.itemgetter(2))
-        beta_pairs=np.zeros([len(betas),3])
-        for i in range(len(betas)):
-            beta_pairs[i,0]=beta_pair[i][0]
-            beta_pairs[i,1]=beta_pair[i][1]
-            beta_pairs[i,2]=beta_pair[i][2]
-        #print(sum(beta_pairs[:,0]))
-        #print(beta_pairs[:,0])
-        new_betas=beta_pairs[:,0]
-        
-    
-    elif typ=='bottom':
-        beta_pair=np.zeros([len(betas),3])
-        for i in range(len(betas)):
-            beta_pair[i,0]=betas[i]
-            beta_pair[i,1]=sensitivities[i]
-            beta_pair[i,2]=i+1
-            
-        #print(beta_pair)
-        beta_pair=sorted(beta_pair,key=operator.itemgetter(1))
-        #print(beta_pair)
-        adjust_slope=(mass_adjust/(121-15))
-        
-        for i in range(len(betas)):
-            #print(beta_pair[i][0])
-            if i<(121-15):
-                beta_pair[i][0]=beta_pair[i][0]-adjust_slope+adjust_slope*((i)/(121-15))
-            else:
-                beta_pair[i][0]=beta_pair[i][0]
-            #print(beta_pair[i][0])
-        #print(beta_pair)
-        beta_pair=sorted(beta_pair,key=operator.itemgetter(2))
-        beta_pairs=np.zeros([len(betas),3])
-        for i in range(len(betas)):
-            beta_pairs[i,0]=beta_pair[i][0]
-            beta_pairs[i,1]=beta_pair[i][1]
-            beta_pairs[i,2]=beta_pair[i][2]
-        #print(sum(beta_pairs[:,0]))
-        #print(beta_pairs[:,0])
-        new_betas=beta_pairs[:,0]
-        
-    
-    return new_betas 
-
-def fix_mass(betas, target_mass, sensitivities, min_val = 0.01, max_val = 0.99, sticky_mass = True, typ = 'all'):
-    current_mass = sum(betas)    
-    adjustment_factor = target_mass / current_mass 
-    
-    new_betas = []
-    if adjustment_factor>1:
-        for _ in betas:
-            if sticky_mass:
-                if (_ == min_val):
-                    new_betas.append(_)
-                    continue
-                elif (_ == max_val):
-                    new_betas.append(_)
-                    continue
-    else:
-        mass_adjust=current_mass-target_mass
-        new_betas=adjust_max_betas(betas,sensitivities,mass_adjust,typ)
-        
-        
-    return new_betas
-
-    
-
-### Function which takes betas, target_mass, whether to use "sticky values" (make highest and lowest values unchanged)
-def fixed_mass_adjustment(betas, target_mass, sensitivities, typ, sticky_mass = True, debug=False, mass_round_dig = 5):
-    if debug:
-        print("Curent mass: {}, target: {}".format(sum(betas), target_mass))
-    
-    material_betas = check_beta_values(betas)
-    while round(sum(material_betas), 5) != 61.0:
-        material_betas = fix_mass(betas = material_betas,sensitivities=sensitivities, target_mass = 61.0, sticky_mass = sticky_mass,typ=typ)
-        material_betas = check_beta_values(material_betas)
-        #print(sum(material_betas))
-        if debug:
-            print(sum(material_betas))
-    return material_betas 
-  
-def calculate_first_moment_vector(beta_1, first_moment_vector, beta_sensitivities):
-    return [(beta_1 * first_mv  + (1 - beta_1) * deriv) 
-                               for first_mv, deriv in zip(first_moment_vector, beta_sensitivities)]
-    
-def calculate_second_moment_vector(beta_2, second_moment_vector, beta_sensitivities):
-    return [(beta_2 * second_mv + (1 - beta_2) * deriv**2) 
-                                for second_mv, deriv in zip(second_moment_vector, beta_sensitivities)]
+# In[3]:
 
 
 
-
-def transformation_function(x):
-    """
-    Transformation function applied to ADAM parameters. 
-    
-    This function allows the ADAM parameters to be unconstrained but can change 
-    the behavior of the parameter domain going into tsunami.
-
-    Parameters
-    ----------
-    x : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    y : TYPE
-        DESCRIPTION.
-
-    """
-    
-    y = np.exp(x)
-    
-    return y
-
-
-
-# previously no sensitivity function,just returned same sensitivities as given from eval_w_tsunami
-# =============================================================================
-# def sensitivity_function(sensitivities,betas,current_mass,total_mass):
-#     new_sensitivities=[]
-# 
-#     for i in range(len(betas)):
-#         new_sensitivities.append(sensitivities[i])
-#     return new_sensitivities
-# =============================================================================
-
-# now we have a penalty term for extremely small/large values of beta
-
-def obj_derivative(derivative_df,parameter_df):
-    """
-    
-
-    Parameters
-    ----------
-    sensitivities : TYPE
-        DESCRIPTION.
-    betas : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    new_sensitivities : TYPE
-        DESCRIPTION.
-
-    """
-    derivative_np = np.array(derivative_df)
-    parameter_np = np.array(parameter_df)
-    
-    r = 100
-    v = 2
-    beta_limit = 20
-    
-# =============================================================================
-#     new_sensitivities=[[],[]]
-#     for mat in range(len(betas)):
-#         for i in range(len(betas[mat])):
-#             new_sensitivities[mat].append(sensitivities[mat][i] - (-r*v*np.exp(-v*(beta_limit+betas[mat][i])) + r*v*np.exp(v*(betas[mat][i]-beta_limit))))
-# =============================================================================
-
-    obj_derivative_np = derivative_np - (-r*v*np.exp(-v*(beta_limit+parameter_np)) + r*v*np.exp(v*(parameter_np-beta_limit)))
-    obj_derivative_df = pd.DataFrame(obj_derivative_np, columns=np.array(parameter_df.columns))
-    
-    return obj_derivative_df
-
-
-
-
-### Implementation of ADAM gradient descent
-### inputs:
-### initial material betas - list of values from 0-1.0 describing material
-### debug_fake_tsunami_run - Boolean, if True running Tsunami is skipped
-### debug_print_betas- Boolean, if true beta values are printed each step
-### number_of_steps - Int, total number of steps to take with algo
-### alpha_value - Float, Step size, set to default value
-### beta_1 - Float, Decay rate for first moment, set to default value
-### beta_2 - Float, Decay rate for second moment, set to default value
-### epsilon - Float, Small value used to avoid division by zero, set to default value
-### write_output - Boolean, True to write out output
-### null_space_adj - Boolean, if True multiply penultimate values by null vector so that their changes sum to 0
-### materials - List of materials void, (TCR) fuel and moderator. If you want a mixed material the form is:
-###    "material 1 string/material 2 string:fraction material 1/fraction material 2"
-def adam_gradient_descent_scale(parameter_df,
-                           debug_print_all = False,
-                           submit_tsunami_job = True,
-                           stopping_value = 0.001,
-                           number_of_steps = 10,
-                           alpha_value = 0.1, 
-                           beta_1 = 0.9,
-                           beta_2 = 0.999,
-                           epsilon = 1,
-                           write_output = False,
-                           write_output_string = "output.csv",
-                           fix_mass_adjustment = True,
-                           fix_mass_target = 'initial',
-                           fix_mass_round_value = 5,
-                           fix_mass_type='all',
-                           starting_step = 1,
-                           starting_first_moment=[],
-                           starting_second_moment=[]):
+def ADAM(parameter_df,
+        pixel_array, 
+        debug_print_all = False,
+        submit_job = True,
+        stopping_value = 0.001,
+        number_of_steps = 10,
+        alpha_value = 0.1, 
+        beta_1 = 0.9,
+        beta_2 = 0.999,
+        epsilon = 1,
+        write_output = False,
+        starting_step = 1,
+        starting_first_moment=[],
+        starting_second_moment=[]):
     """
     Executes ADAM gradient descent algorithm at the highest level.
 
@@ -661,15 +197,20 @@ def adam_gradient_descent_scale(parameter_df,
        
        
     ### Stopping_criteria not implemented currently, only # of steps
-    stopping_criteria = False
-    parameters = parameter_df
+    # stopping_criteria = False
+    # parameters = parameter_df
        
     # only write new output csv files if we are starting at step 1
     if starting_step == 1:
         if write_output:
+            
+            print("\nWARNING: Need to update print-to-csv functions to be dynamic WRT parameter definitions\n")
+            
             with open('output.csv', 'w') as output_file:
                 output_file.write("step, keff\n")
             with open('parameters.csv', 'w') as output_file:
+                # string = 'step, keff,'
+                # string += f' {parameter_df.keys()[0]} [1x{len(parameter_df)}, {parameter_df.keys()[1]} [1x{len(parameter_df)}\n'
                 output_file.write("step, keff, fuel_betas_this_step [1x1936], mod_betas_this_step [1x1936]\n")
             with open('first_moments.csv', 'w') as output_file:
                 output_file.write("step, keff, fuel_1st_moment_vectors_this_step [1x1936], mod_1st_moment_vectors_this_step [1x1936], fuel_2nd_moment_vectors_this_step [1x1936], mod_2nd_moment_vectors_this_step [1x1936]\n")
@@ -677,27 +218,42 @@ def adam_gradient_descent_scale(parameter_df,
                 output_file.write("step, keff, fuel_2nd_moment_vectors_this_step [1x1936], mod_2nd_moment_vectors_this_step [1x1936]\n")
 
        
+
+
     ### Main loop
     while steps < number_of_steps + 1:
         
         print("Step #:", steps)
-        ### 
-        tsunami_job_flag = 'tsunami_job_' + str(steps)
+        job_flag = 'tsunami_job_' + str(steps)
+        
         
         # apply a transformation of variables to the domain
-        transformed_parameters = parameter_df.apply(transformation_function)
+        transformed_parameters = parameter_df.apply(problem_definition.transformation_function)
          
         
-        ### Evaluate with TSUNAMI
-        keff, derivative_df = evaluate_with_Tsunami(transformed_parameters,
-                                                             tsunami_job_flag = tsunami_job_flag,                    
-                                                             submit_tsunami_job = submit_tsunami_job)
-       
-        # put through sensitivity of obj function - now we have a penalty on extremely small betas
-        obj_derivative_df = obj_derivative(derivative_df, parameter_df)
+        
+        ### Evaluate with TSUNAMI, sensitivities/derivatives stored in pixel_array objects
+        keff = evaluate(transformed_parameters,
+                        pixel_array,
+                        steps,
+                        template_file = 'spent_fuel_cask_template.inp',
+                        job_flag = job_flag,                    
+                        submit_job = submit_job)
+        
+        
+        
+        # combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors
+        print("Need to update documentation to maintain consistent verbiage for multiplication factors or optimization parameters")
+        derivative_df = pixel_array_functions.get_combined_derivatives(pixel_array, material_dict_base)
        
         
-        # edit the following to take a the obj_derivative_df and parameter dataframes
+       
+        # chain rule for transofrmation function to get derivatives wrt optimization parameters
+        obj_derivative_df = problem_definition.objective_derivative(derivative_df, parameter_df)
+       
+        
+       
+        ### perform the ADAM algorithm update
         first_moment_df = (beta_1 * first_moment_vector  + (1 - beta_1) * obj_derivative_df)
         second_moment_df = (beta_2 * second_moment_vector + (1 - beta_2) * obj_derivative_df**2) 
         first_moment_hat_df = (first_moment_df / (1 - beta_1**steps))
@@ -706,10 +262,10 @@ def adam_gradient_descent_scale(parameter_df,
         new_parameter_df = (parameter_df + (alpha_value * first_moment_hat_df) / (np.sqrt(second_moment_hat_df) + epsilon))
                              
             
-        ### Writing out the output file   
-        #! redo this to write steps and keff, betas, and moment vectors separately                                       
-        if write_output:                                        # !!! these variable must be printed this way in order to start at step>1
-            with open(write_output_string, 'a') as output_file:
+            
+        ### Writing out the output file                                      
+        if write_output:
+            with open('output.csv', 'a') as output_file:
                 write_string = str(steps) + "," + str(keff)
                 output_file.write(write_string + "\n")
             with open('parameters.csv', 'a') as par_file:
@@ -719,16 +275,21 @@ def adam_gradient_descent_scale(parameter_df,
             with open('second_moments.csv', 'a') as sm_file:
                 np.savetxt(sm_file, [np.array(second_moment_df).flatten()], delimiter=',')
                 
-        # redefine parameters as new updated parameters before while loop
+                
+                
+        # redefine parameters as new updated parameters, increase step number, repeat in while loop
         parameter_df = new_parameter_df
+        steps += 1
+        
+ 
 
 
-# In[9]:
+# In[4]:
 
 
 ### Building initial parameter dataframe
 #material_betas = build_initial_betas(1, 2, 'random', rand_min = 0.2, rand_max = 0.8)
-pixels = 100
+number_of_pixels = 289
 
 
 # =============================================================================
@@ -741,66 +302,99 @@ Non_Uniform_Start = True
 
 if starting_step == 1:
     
-    parameter_vector = pd.DataFrame()
-    parameter_vector['fuel'] = np.ones([pixels])
-    parameter_vector['moderator'] = np.ones([pixels])
+    parameter_df = pd.DataFrame()
+    parameter_df['optimization_parameter_1'] = np.ones([number_of_pixels])
+    parameter_df['optimization_parameter_2'] = np.ones([number_of_pixels])
 
-    
 else:
      _ = 0
-# =============================================================================
-#     data = np.genfromtxt('parameters.csv', delimiter=',', skip_header=1, usecols=range(2,602))
-#     material_betas_start=[[],[]]
-#     material_betas_start[0] = data[-1, 0:pixels]
-#     material_betas_start[1] = data[-1, pixels:pixels*2]  
-#     
-# # =============================================================================
-# #     for mat in range(2):
-# #         material_betas_start[mat] = [-20 if beta < -20 else beta for beta in material_betas_start[mat]]
-# #         material_betas_start[mat] = [20 if beta > 20 else beta for beta in material_betas_start[mat]]
-# # =============================================================================
-#             
-#     initialize_first_moment_vectors = [[],[]]; initialize_second_moment_vectors=[[],[]]
-#     initialize_first_moment_vectors[0] = data[-1,200:300]; initialize_first_moment_vectors[1] = data[-1,300:400]
-#     initialize_second_moment_vectors[0] = data[-1,400:500]; initialize_second_moment_vectors[1] = data[-1,500:600]
-#     
-#     # function inputs if initializing
-#     initialize_boolean=True
-#     initialize_file= 'tsunami_job_' + str(starting_step-1) +'.sdf'
-#     initialize_betas=material_betas_start
-# =============================================================================
-    
 
-#%%
+
+material_dict_base = {'fuel':{
+                             'u-235':8.59435E-04,
+                             'u-238':2.23686E-02,
+                             'o-16':4.64708E-02},
+    
+                 'zircalloy':{'cr-50':3.62373E-06,
+                         'cr-52':6.98800E-05,
+                         'cr-53':7.92383E-06,
+                         'cr-54':1.97241E-06,
+                         'fe-54':9.08312E-06,
+                         'fe-56':1.42586E-04,
+                         'fe-57':3.29292E-06,
+                         'fe-58':4.38228E-07,
+                         'zr-90':2.18292E-02,
+                         'zr-91':4.76042E-03,
+                         'zr-92':7.27640E-03,
+                         'zr-94':7.37398E-03,
+                         'zr-96':1.18798E-03,
+                         'sn-112':4.64145E-06,
+                         'sn-114':3.15810E-06,
+                         'sn-115':1.62690E-06,
+                         'sn-116':6.95739E-05,
+                         'sn-117':3.67488E-05,
+                         'sn-118':1.15893E-04,
+                         'sn-119':4.11031E-05,
+                         'sn-120':1.55895E-04,
+                         'sn-122':2.21545E-05,
+                         'sn-124':2.77051E-05},
+                 
+                  'moderator':{
+                              'o-16':3.3368E-02,
+                              'h-1':6.6733E-02}  
+                                                  }
+
+# make material base a dataframe 
+material_df_base = pd.DataFrame(material_dict_base)
+
+
+# define geometric regions (repeating regions in this case) and the materials present within each
+
+region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
+# region_definition = {'whole_pixel':['fuel','moderator']}
+
+# define the parameters that will be applied to each material in each goemetric region
+
+parameter_definition = {'rod':['optimization_parameter_1','optimization_parameter_2'], 'gap':['optimization_parameter_2'], 'clad':['optimization_parameter_1','optimization_parameter_2']}
+# parameter_definition = {'whole_pixel':['optimization_parameter_1','optimization_parameter_2']}
+
+
+
+print("\nPlease confirm the following region, material, and parameter defnitions:\n")
+for region in region_definition.keys():
+    for material, parameter in zip(region_definition[f'{region}'], parameter_definition[f'{region}']):
+        print(f'For region "{region}" the material "{material}" will be controlled by {parameter}')
+        
+        
+pixel_array = pixel_array_functions.initialize_pixel_array(number_of_pixels, region_definition, parameter_definition, material_df_base, 300)
+        
+
+
+
+# In[5]:
 
 # =============================================================================
 # ### running adam gradient descent algorithm
 # =============================================================================
-adam_gradient_descent_scale(parameter_vector,
-                       submit_tsunami_job=False,
-                       debug_print_all = False,
-                       alpha_value = 0.1,
-                       beta_1=0.9,
-                       number_of_steps = 3,
-                       write_output = True,
-                       epsilon = 1e-8,
-                       fix_mass_adjustment = False,
-                       fix_mass_target = 'initial',
-                       fix_mass_round_value = 5,
-                       
-                       starting_step = starting_step,
-                       
-                       starting_first_moment = [],
-                       starting_second_moment = [])
+ADAM(parameter_df,
+    pixel_array, 
+    submit_job=False,
+    debug_print_all = False,
+    alpha_value = 0.1,
+    beta_1=0.9,
+    number_of_steps = 1,
+    write_output = True,
+    epsilon = 1e-8,
+    fix_mass_adjustment = False,
+    fix_mass_target = 'initial',
+    fix_mass_round_value = 5,
+    
+    starting_step = starting_step,
+    
+    starting_first_moment = [],
+    starting_second_moment = [])
 
 
-#%%
     
-    
-    
-    
-    
-    
-    
-    
+
     

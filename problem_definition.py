@@ -75,7 +75,7 @@ def combine_nuclide_derivatives(nuclide_derivatives):
     Function used to combine derivatives from individual nuclides into a derivative wrt the material.
     
     Because ADAM wants the derivative with respect to the number density of a given material, and that is a function 
-    of individual isotopes' number density, the chain rule forderivatives must be used. In this case, it is a simple 
+    of individual isotopes' number density, the chain rule for derivatives must be used. In this case, it is a simple 
     sum over all nuclide derivatives because the total atom density for a material is just a sum of all constituent atom densities.
 
     Parameters

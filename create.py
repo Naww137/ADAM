@@ -24,7 +24,6 @@ import math
 from scipy.linalg import null_space
 import numpy as np
 import random
-import operator
 import pixel
 import pixel_array_functions
 import cluster_interface
@@ -255,7 +254,7 @@ def adam_gradient_descent_scale(parameter_df,
         ### Evaluate with TSUNAMI, sensitivities/derivatives stored in pixel_array objects
         keff = evaluate_with_Tsunami(transformed_parameters,
                                                              pixel_array,
-                                                             template_file = 'tsunami_template_file_10x10.inp',
+                                                             template_file = 'input-for-alg-v2.inp',
                                                              tsunami_job_flag = tsunami_job_flag,                    
                                                              submit_tsunami_job = submit_tsunami_job)
         
@@ -303,7 +302,7 @@ def adam_gradient_descent_scale(parameter_df,
 
 ### Building initial parameter dataframe
 #material_betas = build_initial_betas(1, 2, 'random', rand_min = 0.2, rand_max = 0.8)
-number_of_pixels = 100
+number_of_pixels = 289
 
 
 # =============================================================================
@@ -332,6 +331,8 @@ material_dict_base = {'fuel':{
                             'cr-50':3.62373E-06,
                             'cr-52':6.98800E-05,
                             'cr-53':7.92383E-06},
+                    'void':{
+                            'v':0},
                   'moderator':{
                               'o-16':3.3368E-02,
                               'h-1':6.6733E-02}  
@@ -343,13 +344,13 @@ material_df_base = pd.DataFrame(material_dict_base)
 
 # define geometric regions (repeating regions in this case) and the materials present within each
 
-# region_definition = {'rod':['fuel','moderator'], 'clad':['zircalloy','moderator']}
-region_definition = {'whole_pixel':['fuel','moderator']}
+region_definition = {'rod':['fuel','moderator'], 'gap':['void', 'moderator'], 'clad':['zircalloy','moderator']}
+# region_definition = {'whole_pixel':['fuel','moderator']}
 
 # define the parameters that will be applied to each material in each goemetric region
 
-#parameter_definition = {'rod':['optimization_parameter_1','optimization_parameter_2'], 'clad':['optimization_parameter_1','optimization_parameter_2']}
-parameter_definition = {'whole_pixel':['optimization_parameter_1','optimization_parameter_2']}
+parameter_definition = {'rod':['optimization_parameter_1','optimization_parameter_2'], 'gap':['optimization_parameter_1','optimization_parameter_2'], 'clad':['optimization_parameter_1','optimization_parameter_2']}
+# parameter_definition = {'whole_pixel':['optimization_parameter_1','optimization_parameter_2']}
 
 
 

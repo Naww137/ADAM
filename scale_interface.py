@@ -101,9 +101,6 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string):
     
 
 
-
-#%%
-
 def read_total_sensitivity_by_mixture(tsunami_file_string):
     """
     Reads a SCALE.out file and parses out the sensitivities by mixture.
@@ -150,11 +147,72 @@ def read_total_sensitivity_by_mixture(tsunami_file_string):
     return pd.DataFrame(data, columns=['mixture_id', 'sensitivity', 'uncertainty'])
     
     
+
+def create_tsunami_input(template_file, input_file, steps, hex_number, generations):
+    """
+    Creates a tsunami input file from the template file with a random number seed, adds number of generations and removes read source input if on the first step.
+
+    Parameters
+    ----------
+    template_file : string
+        Filename of template file.
+    input_file : string
+        Filename of input file to create.
+    steps : int
+        Step number in the gradient descent algorithm.
+    hex_number : float
+        Python generated random number seed.
+    generations : int
+        Monte Carlo generations to be run in each step.
+
+    Returns
+    -------
+    None.
+
+    """
     
+    with open(template_file, 'r') as f:
+        readlines = f.readlines()
+        f.close()
+        
+    with open(input_file, 'w') as f:
+        
+        if steps == 1:
+            for line in readlines[3:]:
+                if line.startswith('read start'):
+                    continue
+                if line.startswith('nst=9'):
+                    continue
+                if line.startswith('mss=fissionSource.msl'):
+                    continue
+                if line.startswith('end start'):
+                    continue
+                if line.startswith('nsk=1'):
+                    f.write('nsk=10\n')
+                    continue
+                if line.startswith(' gen='):
+                    f.write('gen={generations+10}\n')
+                    continue
+                else:
+                    f.write(line)
+        else:
+            for line in readlines:
+                if line.startswith('rnd='):
+                    f.write(f'rnd={hex_number}')
+                if line.startswith('gen='):
+                    f.write(f'rnd={generations}')
+                else:
+                    f.write(line)
     
 
 
-#%%
+    
+
+
+#%% Old legacy function !!!
+
+
+
 
 ### Tsunami File function section
 def parse_sdf_file_into_dict(tsunami_file_string):
