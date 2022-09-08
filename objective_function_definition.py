@@ -8,10 +8,10 @@ Created on Mon Sep  5 10:59:10 2022
 
 import numpy as np
 import pandas as pd
-import pixel
 
 
 
+#%% Edit the functional forms used in this problem
 
 def transformation_function(x):
     """

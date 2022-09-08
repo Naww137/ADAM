@@ -21,14 +21,13 @@ Created on Mon Aug  1 19:33:07 2022
 import pandas as pd
 import os
 import math
-from scipy.linalg import null_space
 import numpy as np
 import random
 import pixel
 import pixel_array_functions
 import cluster_interface
 import scale_interface
-import problem_definition
+import objective_function_definition
 
 
 # In[2]:
@@ -37,6 +36,7 @@ import problem_definition
 def evaluate(parameter_df,
             pixel_array,
             steps,
+            generations,
             template_file = 'template.inp',
             job_flag = "tsunami_job",
             build_input = True,
@@ -102,7 +102,7 @@ def evaluate(parameter_df,
         hex_number = hex_number [2:]
         
         # create input file from template file
-        scale_interface.create_tsunami_input(template_file, job_flag+'.inp', steps, hex_number)
+        scale_interface.create_tsunami_input(template_file, job_flag+'.inp', steps, hex_number, generations)
         
         # write each pixel's material string to target input file
         pixel_array_functions.write_material_strings_to_template(pixel_array, job_flag+'.inp')
@@ -149,13 +149,19 @@ def evaluate(parameter_df,
     return keff
 
 
+
+
+
+
 # In[3]:
 
 
 
 def ADAM(parameter_df,
         pixel_array, 
-        debug_print_all = False,
+        material_dict_base,
+        template_file,
+        generations = 10,
         submit_job = True,
         stopping_value = 0.001,
         number_of_steps = 10,
@@ -228,7 +234,7 @@ def ADAM(parameter_df,
         
         
         # apply a transformation of variables to the domain
-        transformed_parameters = parameter_df.apply(problem_definition.transformation_function)
+        transformed_parameters = parameter_df.apply(objective_function_definition.transformation_function)
          
         
         
@@ -236,7 +242,8 @@ def ADAM(parameter_df,
         keff = evaluate(transformed_parameters,
                         pixel_array,
                         steps,
-                        template_file = 'spent_fuel_cask_template.inp',
+                        generations,
+                        template_file = template_file, # 'spent_fuel_cask_template.inp', #'tsunami_template_file_10x10.inp'
                         job_flag = job_flag,                    
                         submit_job = submit_job)
         
@@ -249,17 +256,17 @@ def ADAM(parameter_df,
         
        
         # chain rule for transofrmation function to get derivatives wrt optimization parameters
-        obj_derivative_df = problem_definition.objective_derivative(derivative_df, parameter_df)
+        obj_derivative_df = objective_function_definition.objective_derivative(derivative_df, parameter_df)
        
         
        
-        ### perform the ADAM algorithm update
+        ### perform the ADAM algorithm update (remember, this is a minimization)
         first_moment_df = (beta_1 * first_moment_vector  + (1 - beta_1) * obj_derivative_df)
         second_moment_df = (beta_2 * second_moment_vector + (1 - beta_2) * obj_derivative_df**2) 
         first_moment_hat_df = (first_moment_df / (1 - beta_1**steps))
         second_moment_hat_df = (second_moment_df/ (1 - beta_2**steps))
        
-        new_parameter_df = (parameter_df + (alpha_value * first_moment_hat_df) / (np.sqrt(second_moment_hat_df) + epsilon))
+        new_parameter_df = (parameter_df - (alpha_value * first_moment_hat_df) / (np.sqrt(second_moment_hat_df) + epsilon))
                              
             
             
@@ -281,119 +288,6 @@ def ADAM(parameter_df,
         parameter_df = new_parameter_df
         steps += 1
         
- 
-
-
-# In[4]:
-
-
-### Building initial parameter dataframe
-#material_betas = build_initial_betas(1, 2, 'random', rand_min = 0.2, rand_max = 0.8)
-number_of_pixels = 289
-
-
-# =============================================================================
-# starting criteria !!!
-# assign starting_step as the step to be ran next (i.e if steps 1-20 have been ran starting_step=21)
-# =============================================================================
-starting_step = 1
-Non_Uniform_Start = True
-
-
-if starting_step == 1:
-    
-    parameter_df = pd.DataFrame()
-    parameter_df['optimization_parameter_1'] = np.ones([number_of_pixels])
-    parameter_df['optimization_parameter_2'] = np.ones([number_of_pixels])
-
-else:
-     _ = 0
-
-
-material_dict_base = {'fuel':{
-                             'u-235':8.59435E-04,
-                             'u-238':2.23686E-02,
-                             'o-16':4.64708E-02},
-    
-                 'zircalloy':{'cr-50':3.62373E-06,
-                         'cr-52':6.98800E-05,
-                         'cr-53':7.92383E-06,
-                         'cr-54':1.97241E-06,
-                         'fe-54':9.08312E-06,
-                         'fe-56':1.42586E-04,
-                         'fe-57':3.29292E-06,
-                         'fe-58':4.38228E-07,
-                         'zr-90':2.18292E-02,
-                         'zr-91':4.76042E-03,
-                         'zr-92':7.27640E-03,
-                         'zr-94':7.37398E-03,
-                         'zr-96':1.18798E-03,
-                         'sn-112':4.64145E-06,
-                         'sn-114':3.15810E-06,
-                         'sn-115':1.62690E-06,
-                         'sn-116':6.95739E-05,
-                         'sn-117':3.67488E-05,
-                         'sn-118':1.15893E-04,
-                         'sn-119':4.11031E-05,
-                         'sn-120':1.55895E-04,
-                         'sn-122':2.21545E-05,
-                         'sn-124':2.77051E-05},
-                 
-                  'moderator':{
-                              'o-16':3.3368E-02,
-                              'h-1':6.6733E-02}  
-                                                  }
-
-# make material base a dataframe 
-material_df_base = pd.DataFrame(material_dict_base)
-
-
-# define geometric regions (repeating regions in this case) and the materials present within each
-
-region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
-# region_definition = {'whole_pixel':['fuel','moderator']}
-
-# define the parameters that will be applied to each material in each goemetric region
-
-parameter_definition = {'rod':['optimization_parameter_1','optimization_parameter_2'], 'gap':['optimization_parameter_2'], 'clad':['optimization_parameter_1','optimization_parameter_2']}
-# parameter_definition = {'whole_pixel':['optimization_parameter_1','optimization_parameter_2']}
-
-
-
-print("\nPlease confirm the following region, material, and parameter defnitions:\n")
-for region in region_definition.keys():
-    for material, parameter in zip(region_definition[f'{region}'], parameter_definition[f'{region}']):
-        print(f'For region "{region}" the material "{material}" will be controlled by {parameter}')
-        
-        
-pixel_array = pixel_array_functions.initialize_pixel_array(number_of_pixels, region_definition, parameter_definition, material_df_base, 300)
-        
-
-
-
-# In[5]:
-
-# =============================================================================
-# ### running adam gradient descent algorithm
-# =============================================================================
-ADAM(parameter_df,
-    pixel_array, 
-    submit_job=False,
-    debug_print_all = False,
-    alpha_value = 0.1,
-    beta_1=0.9,
-    number_of_steps = 1,
-    write_output = True,
-    epsilon = 1e-8,
-    fix_mass_adjustment = False,
-    fix_mass_target = 'initial',
-    fix_mass_round_value = 5,
-    
-    starting_step = starting_step,
-    
-    starting_first_moment = [],
-    starting_second_moment = [])
-
 
     
 

@@ -1,6 +1,6 @@
 
 
-import problem_definition
+import objective_function_definition
 import pandas as pd
 
 
@@ -135,9 +135,9 @@ class pixel:
                     absolute_sensitivity_by_parameter[isotope] = self.sensitivity_data_by_nuclide[region][isotope][3]
                 
                 if optimization_parameter in temporary_dictionary:
-                    temporary_dictionary[optimization_parameter].append(problem_definition.combine_nuclide_derivatives(absolute_sensitivity_by_parameter))
+                    temporary_dictionary[optimization_parameter].append(objective_function_definition.combine_nuclide_derivatives(absolute_sensitivity_by_parameter))
                 else:
-                    temporary_dictionary[optimization_parameter] = [problem_definition.combine_nuclide_derivatives(absolute_sensitivity_by_parameter)]
+                    temporary_dictionary[optimization_parameter] = [objective_function_definition.combine_nuclide_derivatives(absolute_sensitivity_by_parameter)]
                 
         self.derivatives_wrt_parameters_per_region = pd.DataFrame(temporary_dictionary, index=list(self.region_definition.keys()))
     
@@ -145,13 +145,13 @@ class pixel:
     
     def combine_region_derivatives(self):
         """
-        Combines the derivatives across regions for the same parameters given the function for bomining derivatives in the problem_definition module.
+        Combines the derivatives across regions for the same parameters given the function for bomining derivatives in the objective_function_definition module.
 
         Returns
         -------
         None.
 
         """
-        self.derivatives_wrt_parameters = self.derivatives_wrt_parameters_per_region.apply(problem_definition.combine_region_derivatives)
+        self.derivatives_wrt_parameters = self.derivatives_wrt_parameters_per_region.apply(objective_function_definition.combine_region_derivatives)
     
     

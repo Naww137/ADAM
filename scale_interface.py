@@ -59,6 +59,8 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string):
 
     """
     data = {}
+    did_not_find_keff = True
+    did_not_find_sensitivities = True
     with open(tsunami_file_string, 'r') as f:
         in_data = False
         skiplines = 0
@@ -69,10 +71,17 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string):
                 splitline = line.split()
                 keff = float(splitline[5])
                 unc = float(splitline[9])
+                did_not_find_keff = False
                 
             # read out sensitivities
             if "Total Sensitivity Coefficients by Nuclide" in line:
                 in_data = True
+                did_not_find_sensitivities = False
+                
+                # throw error if keff not found before trying to use the keff variable
+                if did_not_find_keff:
+                    raise ValueError(f"No k-eff found, it seems that KENO did not complete for {tsunami_file_string}.") 
+
                 continue
             
             if in_data:
@@ -96,7 +105,13 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string):
                     if mixture_id not in data:
                         data[mixture_id] = {}
                     data[mixture_id][isotope] = (sensitivity, uncertainty, atom_density, absolute_sensitivity)
-            
+        
+        # throw error if keff or sensitivities were not found
+        if did_not_find_keff:
+                    raise ValueError(f"No k-eff found, it seems that KENO did not complete for {tsunami_file_string}.")   
+        if did_not_find_sensitivities:
+            raise ValueError(f"No sensitivities found, it seems that SAMS did not complete for {tsunami_file_string}.")
+                    
     return data, keff
     
 
@@ -180,27 +195,27 @@ def create_tsunami_input(template_file, input_file, steps, hex_number, generatio
         if steps == 1:
             for line in readlines[3:]:
                 if line.startswith('read start'):
-                    continue
-                if line.startswith('nst=9'):
-                    continue
-                if line.startswith('mss=fissionSource.msl'):
-                    continue
-                if line.startswith('end start'):
-                    continue
-                if line.startswith('nsk=1'):
-                    f.write('nsk=10\n')
-                    continue
-                if line.startswith(' gen='):
-                    f.write('gen={generations+10}\n')
-                    continue
+                    pass
+                elif line.startswith('nst=9'):
+                    pass
+                elif line.startswith('mss=fissionSource.msl'):
+                    pass
+                elif line.startswith('end start'):
+                    pass
+                elif line.startswith('nsk=1'):
+                    f.write('nsk=10\n')                   
+                elif line.startswith('gen='):
+                    f.write(f'gen={generations+10}\n')                    
+                elif line.startswith('rnd='):
+                    f.write(f'rnd={hex_number}\n')                    
                 else:
                     f.write(line)
         else:
             for line in readlines:
                 if line.startswith('rnd='):
-                    f.write(f'rnd={hex_number}')
-                if line.startswith('gen='):
-                    f.write(f'rnd={generations}')
+                    f.write(f'rnd={hex_number}\n')                  
+                elif line.startswith('gen='):
+                    f.write(f'gen={generations}\n')
                 else:
                     f.write(line)
     
