@@ -8,7 +8,7 @@ Created on Mon Sep  5 10:59:10 2022
 
 import numpy as np
 import pandas as pd
-import pixel
+from ADAM import pixel
 
 
 

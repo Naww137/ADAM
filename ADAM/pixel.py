@@ -1,12 +1,28 @@
 
 
-import objective_function_definition
+from ADAM import objective_function_definition
 import pandas as pd
 
 
 
-
 class pixel:
+    """
+    Summary of pixel class.
+
+    More on pixel class.
+
+
+    Methods
+    -------
+    apply_optimization_parameters_to_material_definitions: 
+        Applies the optimization parameters to the base material values.
+    write_material_string:
+        Creates the updated material string attribute.
+    combine_derivatives_wrt_nuclides:
+        Combine derivatives for each nuclide in a material.
+    combine_region_derivatives:
+        Combines derivatives for each region with a given optimization parameter.
+    """
     
     def __init__(self, region_definition, parameter_definition, material_df_base, pixel_id, temperature):
         

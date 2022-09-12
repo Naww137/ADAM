@@ -19,15 +19,13 @@ Created on Mon Aug  1 19:33:07 2022
 
 
 import pandas as pd
-import os
-import math
 import numpy as np
 import random
-import pixel
-import pixel_array_functions
-import cluster_interface
-import scale_interface
-import objective_function_definition
+
+from ADAM import pixel_array_functions
+from ADAM import cluster_interface
+from ADAM import scale_interface
+from ADAM import objective_function_definition
 
 
 # In[2]:
@@ -41,8 +39,6 @@ def evaluate(parameter_df,
             job_flag = "tsunami_job",
             build_input = True,
             submit_job = True,
-            pull_keff = True,
-            pull_sensitivities = True,
             delete_excess_run_files = False):
     """
     Evaluates the current step.
@@ -54,34 +50,29 @@ def evaluate(parameter_df,
 
     Parameters
     ----------
-    parameter_df : TYPE
-        DESCRIPTION.
-    pixel_array : object array
-        Array of pixel objects containing material/region/parameter information.
-    materials : TYPE
-        DESCRIPTION.
-    tsunami_job_flag : TYPE, optional
-        DESCRIPTION. The default is "tsunami_job".
-    build_input : TYPE, optional
-        DESCRIPTION. The default is True.
-    submit_tsunami_job : TYPE, optional
-        DESCRIPTION. The default is True.
-    pull_keff : TYPE, optional
-        DESCRIPTION. The default is True.
-    pull_sensitivities : TYPE, optional
-        DESCRIPTION. The default is True.
+    parameter_df : _type_
+        _description_
+    pixel_array : _type_
+        _description_
+    steps : _type_
+        _description_
+    generations : _type_
+        _description_
+    template_file : str, optional
+        _description_, by default 'template.inp'
+    job_flag : str, optional
+        _description_, by default "tsunami_job"
+    build_input : bool, optional
+        _description_, by default True
+    submit_job : bool, optional
+        _description_, by default True
+    delete_excess_run_files : bool, optional
+        _description_, by default False
 
     Returns
     -------
-    keff : TYPE
-        DESCRIPTION.
-    beta_sensitivities : TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-
+    _type_
+        _description_
     """
     
     
@@ -136,9 +127,9 @@ def evaluate(parameter_df,
     # convert scale IDed sensitivities to sensitivities specific to each pixel/pixel region in the pixel_array
     pixel_array_functions.get_nuclide_sensitivites_for_each_pixel(pixel_array, sensitivity_dictionary)
  
-    
-    
-    
+
+
+ 
     ### Delete un-necessary_files from the previous job
     
     if delete_excess_run_files:
