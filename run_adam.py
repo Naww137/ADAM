@@ -22,8 +22,8 @@ while step < 5:
     ADAM_control_module.update(step, pixel_array, pdef)
 
     # run a step
-    #cluster_interface.submit_jobs_to_necluster('tsunami_job')
-    #cluster_interface.wait_on_submitted_job('tsunami_job')
+    cluster_interface.submit_jobs_to_necluster('tsunami_job')
+    cluster_interface.wait_on_submitted_job('tsunami_job')
 
     # if tsunami job completed with no errors, continues, else re-run step
 

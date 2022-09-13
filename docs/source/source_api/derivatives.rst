@@ -11,7 +11,8 @@ densities of each constituent isotope. This require a chain rule for derivatives
 Furthermore, the ADAM solver is generally not setup to optimized directly over the density parameter $\rho$, rather, some transformation funciton is applied to contrain 
 the domain of this parameter without constraining the algorithm itself. This transformation function and the execution of its chain rule is actually housed in the
 :doc:'Problem Definition' object since it is thought of as a problem constraint.
-test link is :doc:'ADAM_control_module'
+test link is :ref:`ADAM Control Module <ADAM_control_module>'
  
 .. automodule:: ADAM.derivatives
       :members:
+      :undoc-members:

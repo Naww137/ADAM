@@ -55,7 +55,7 @@ numpydoc_class_members_toctree = False
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# html_permalinks_icon = '<span>#</span>'
-# html_theme = 'sphinxawesome_theme'
-html_theme = 'alabaster'
-html_static_path = ['_static']
+html_permalinks_icon = '<span>#</span>'
+html_theme = 'sphinxawesome_theme'
+# html_theme = 'alabaster'
+# html_static_path = ['_static']
