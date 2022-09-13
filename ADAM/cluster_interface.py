@@ -85,6 +85,7 @@ def wait_on_submitted_job(file_name_flag):
     while _ == 0:
         for file in os.listdir("."):
             if '_done' in file:
+                #time.sleep(5)
                 print("Job complete! Continuing...")
                 return
 

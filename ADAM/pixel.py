@@ -1,6 +1,6 @@
 
 
-from ADAM import objective_function_definition
+from ADAM import derivatives
 import pandas as pd
 
 
@@ -40,17 +40,20 @@ class pixel:
                 
                 
         
-    def apply_optimization_parameters_to_material_definitions(self, parameters):
+    def apply_density_factors(self, density_factors):
         """
-        Generates updated isotopic concentration values for each region within a pixel given the optimization parameters.
+        Generates updated isotopic concentration values for each region within a pixel.
         
-        The updated_materials_definition attribute for the pixel object is created. This dataframe is created by applying the optimization 
-        parameters to the base material definition, i.e. updated materials = base materials * parameters
+        The updated_materials_definition attribute for the pixel object is created. This dataframe is created by multiplying the density 
+        factors (transformed optimization parameters) to the base isotopic concentrations (material_df_base).
+        .. math::
+            N_{updated} = N_{base}*T(\theta)
+        Where T is the user defined transformation function.
 
         Parameters
         ----------
-        parameters : DataFrame
-            Parameters being optimized by ADAM.
+        density_factors : DataFrame
+            Transformed optimization parameters, aka density factors.
 
         Returns
         -------
@@ -66,57 +69,13 @@ class pixel:
         # apply multiplier
         for region in self.region_definition:
             for material in self.updated_region_materials[f'{region}']:
-                self.updated_region_materials[f'{region}'][f'{material}'] = self.updated_region_materials[f'{region}'][f'{material}'] * parameters[f'{material}']
+                self.updated_region_materials[f'{region}'][f'{material}'] = self.updated_region_materials[f'{region}'][f'{material}'] * density_factors[f'{material}']
             
         # combine like isotopes 
         for region in self.region_definition:
             self.updated_region_materials[f'{region}']['combined'] = self.updated_region_materials[f'{region}'].sum(axis=1)
     
-    
-    def write_material_string(self):
-        """
-        Creates the updated material string attribute for pixel object.
-        
-        This attribute is a string specific to the pixel object it belongs to and corresponds to a SCALE material composition input.
-        The material id format is as follows, the first 4 digits represent the pixel, the last digit, or digit with magnitude 1e0, 
-        represents the region within the pixel and will repeat within each pixel.
 
-        Raises
-        ------
-        ValueError
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        
-        material_string = ''
-        
-        if hasattr(self, 'updated_region_materials'):
-            pass
-        else:
-            raise ValueError("Pixel does not have updated_region_materials attribute, please run 'apply_optimization_parameters_to_material_definitions' before writing material string")
-            
-        
-        # loop through regions in the pixel
-        region_id = 0
-        for region_key, region_df in self.updated_region_materials.items():
-            
-            material_string += f"' {region_key}\n"
-            material_id = (self.pixel_id*10)+region_id
-            
-            region_df_remove_zeros = region_df.loc[region_df.combined != 0]
-            for isotope_key, isotope_value in region_df_remove_zeros.combined.iteritems():
-                material_string += f"{isotope_key} {material_id} 0 {isotope_value} {self.temp} end\n"
-        
-        
-            region_id += 1
-            if region_id > 9:
-                raise ValueError("Cannot have more than 10 material regions per pixel")
-
-        self.material_string = material_string
                 
     
     def combine_derivatives_wrt_nuclides(self, material_dict_base):
@@ -151,9 +110,9 @@ class pixel:
                     absolute_sensitivity_by_parameter[isotope] = self.sensitivity_data_by_nuclide[region][isotope][3]
                 
                 if optimization_parameter in temporary_dictionary:
-                    temporary_dictionary[optimization_parameter].append(objective_function_definition.combine_nuclide_derivatives(absolute_sensitivity_by_parameter))
+                    temporary_dictionary[optimization_parameter].append(derivatives.combine_nuclide_derivatives(absolute_sensitivity_by_parameter))
                 else:
-                    temporary_dictionary[optimization_parameter] = [objective_function_definition.combine_nuclide_derivatives(absolute_sensitivity_by_parameter)]
+                    temporary_dictionary[optimization_parameter] = [derivatives.combine_nuclide_derivatives(absolute_sensitivity_by_parameter)]
                 
         self.derivatives_wrt_parameters_per_region = pd.DataFrame(temporary_dictionary, index=list(self.region_definition.keys()))
     
@@ -168,6 +127,6 @@ class pixel:
         None.
 
         """
-        self.derivatives_wrt_parameters = self.derivatives_wrt_parameters_per_region.apply(objective_function_definition.combine_region_derivatives)
+        self.derivatives_wrt_parameters = self.derivatives_wrt_parameters_per_region.apply(derivatives.combine_region_derivatives)
     
     

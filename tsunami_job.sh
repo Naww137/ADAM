@@ -10,7 +10,7 @@ TMPDIR=/tmp/$USER/scale.$$
 
 cd $PBS_O_WORKDIR
 
-scalerte -m -T $TMPDIR tsunami_job_1.inp
-grep -a "final result" tsunami_job_1.inp.out > tsunami_job_1.inp_done.dat
+scalerte -m -T $TMPDIR tsunami_job.inp
+grep -a "final result" tsunami_job.inp.out > tsunami_job.inp_done.dat
 
 rm -rf $TMPDIR
