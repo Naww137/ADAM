@@ -42,7 +42,7 @@ def read_keff(tsunami_file_string):
 
 
 
-def read_total_sensitivity_by_nuclide(tsunami_file_string):
+def read_total_sensitivity_by_nuclide(tsunami_file_string, pixel_array):
     """
     Reads out energy integrated total sensitivities for each nuclide in each material id region.
 
@@ -112,8 +112,171 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string):
         if did_not_find_sensitivities:
             raise ValueError(f"No sensitivities found, it seems that SAMS did not complete for {tsunami_file_string}.")
                     
-    return data, keff
+
+    ### Now parse dictionary data from scale into pixels in pixel array
+    for each_pixel in pixel_array:
+        each_pixel.sensitivity_data_by_nuclide = {}
+        for i, region in enumerate(each_pixel.region_definition):
+            scale_material_id = each_pixel.pixel_id*10 + i
+            each_pixel.sensitivity_data_by_nuclide[region] = data[scale_material_id]
+                
+    return keff
     
+
+
+# =======================================================================================
+
+def get_combined_derivatives(pixel_array, material_dict_base):
+    """
+    Combines nuclide derivatives for each region and then for each parameter within each pixel in the pixel array.
+    
+    See Also
+    --------
+    pixel.combine_derivatives_wrt_nuclides
+
+
+    Parameters
+    ----------
+    pixel_array : TYPE
+        DESCRIPTION.
+    material_dict_base : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    DataFrame
+        DataFrame of sensitivities wrt optimization parameters.
+
+    """
+    derivatives_wrt_parameters = []
+    for each_pixel in pixel_array:
+        each_pixel.combine_derivatives_wrt_nuclides(material_dict_base)
+        each_pixel.combine_region_derivatives()
+        derivatives_wrt_parameters.append(each_pixel.derivatives_wrt_parameters)
+        
+    return pd.DataFrame(derivatives_wrt_parameters)
+    
+
+def create_tsunami_input(template_file, input_file, step, hex_number, generations):
+    """
+    Creates a tsunami input file from the template file with a random number seed, adds number of generations and removes read source input if on the first step.
+
+    Parameters
+    ----------
+    template_file : string
+        Filename of template file.
+    input_file : string
+        Filename of input file to create.
+    steps : int
+        Step number in the gradient descent algorithm.
+    hex_number : float
+        Python generated random number seed.
+    generations : int
+        Monte Carlo generations to be run in each step.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    with open(template_file, 'r') as f:
+        readlines = f.readlines()
+        f.close()
+        
+    with open(input_file, 'w') as f:
+        
+        if step == 1:
+            for line in readlines[3:]:
+                if line.startswith('read start'):
+                    pass
+                elif line.startswith('nst=9'):
+                    pass
+                elif line.startswith('mss=fissionSource.msl'):
+                    pass
+                elif line.startswith('end start'):
+                    pass
+                elif line.startswith('nsk=1'):
+                    f.write('nsk=10\n')                   
+                elif line.startswith('gen='):
+                    f.write(f'gen={generations+10}\n')                    
+                elif line.startswith('rnd='):
+                    f.write(f'rnd={hex_number}\n')                    
+                else:
+                    f.write(line)
+        else:
+            for line in readlines:
+                if line.startswith('rnd='):
+                    f.write(f'rnd={hex_number}\n')                  
+                elif line.startswith('gen='):
+                    f.write(f'gen={generations}\n')
+                else:
+                    f.write(line)
+    
+
+def material_string(pixel):
+        """
+        Creates the updated material string attribute for pixel object.
+        
+        This attribute is a string specific to the pixel object it belongs to corresponding to a SCALE material composition input.
+        The material id format is as follows, the first 4 digits represent the pixel, the last digit, or digit with magnitude 1e0, 
+        represents the region within the pixel and will repeat within each pixel.
+
+        Raises
+        ------
+        ValueError
+            DESCRIPTION.
+
+        Returns
+        -------
+        SCALE composition material string for the given pixel.
+
+        """
+        
+        material_string = ''
+        
+        if hasattr(pixel, 'updated_region_materials'):
+            pass
+        else:
+            raise ValueError("Pixel does not have updated_region_materials attribute, please run 'apply_optimization_parameters_to_material_definitions' before writing material string")
+            
+        
+        # loop through regions in the pixel
+        region_id = 0
+        for region_key, region_df in pixel.updated_region_materials.items():
+            
+            material_string += f"' {region_key}\n"
+            material_id = (pixel.pixel_id*10)+region_id
+            
+            region_df_remove_zeros = region_df.loc[region_df.combined != 0]
+            for isotope_key, isotope_value in region_df_remove_zeros.combined.iteritems():
+                material_string += f"{isotope_key} {material_id} 0 {isotope_value} {pixel.temp} end\n"
+        
+        
+            region_id += 1
+            if region_id > 9:
+                raise ValueError("Cannot have more than 10 material regions per pixel")
+
+        return material_string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#%% Unused functions
+
 
 
 def read_total_sensitivity_by_mixture(tsunami_file_string):
@@ -161,72 +324,6 @@ def read_total_sensitivity_by_mixture(tsunami_file_string):
                     
     return pd.DataFrame(data, columns=['mixture_id', 'sensitivity', 'uncertainty'])
     
-    
-
-def create_tsunami_input(template_file, input_file, steps, hex_number, generations):
-    """
-    Creates a tsunami input file from the template file with a random number seed, adds number of generations and removes read source input if on the first step.
-
-    Parameters
-    ----------
-    template_file : string
-        Filename of template file.
-    input_file : string
-        Filename of input file to create.
-    steps : int
-        Step number in the gradient descent algorithm.
-    hex_number : float
-        Python generated random number seed.
-    generations : int
-        Monte Carlo generations to be run in each step.
-
-    Returns
-    -------
-    None.
-
-    """
-    
-    with open(template_file, 'r') as f:
-        readlines = f.readlines()
-        f.close()
-        
-    with open(input_file, 'w') as f:
-        
-        if steps == 1:
-            for line in readlines[3:]:
-                if line.startswith('read start'):
-                    pass
-                elif line.startswith('nst=9'):
-                    pass
-                elif line.startswith('mss=fissionSource.msl'):
-                    pass
-                elif line.startswith('end start'):
-                    pass
-                elif line.startswith('nsk=1'):
-                    f.write('nsk=10\n')                   
-                elif line.startswith('gen='):
-                    f.write(f'gen={generations+10}\n')                    
-                elif line.startswith('rnd='):
-                    f.write(f'rnd={hex_number}\n')                    
-                else:
-                    f.write(line)
-        else:
-            for line in readlines:
-                if line.startswith('rnd='):
-                    f.write(f'rnd={hex_number}\n')                  
-                elif line.startswith('gen='):
-                    f.write(f'gen={generations}\n')
-                else:
-                    f.write(line)
-    
-
-
-    
-
-
-#%% Old legacy function !!!
-
-
 
 
 ### Tsunami File function section

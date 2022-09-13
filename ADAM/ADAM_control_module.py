@@ -1,285 +1,202 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Aug  1 19:33:07 2022
 
-@author: noahwalton
-"""
-
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Implementation of the stochastic gradiant descent algorithm
-# # https://en.wikipedia.org/wiki/Stochastic_gradient_descent
-# # And ADAM Gradient Descent
-# # https://arxiv.org/pdf/1412.6980.pdf
-# # Coupled to Scale Tsunami 
-
-# In[1]:
-
-
-import pandas as pd
+#%%
 import numpy as np
+import pandas as pd
 import random
-
-from ADAM import pixel_array_functions
-from ADAM import cluster_interface
+import os
 from ADAM import scale_interface
-from ADAM import objective_function_definition
 
 
-# In[2]:
-
-
-def evaluate(parameter_df,
-            pixel_array,
-            steps,
-            generations,
-            template_file = 'template.inp',
-            job_flag = "tsunami_job",
-            build_input = True,
-            submit_job = True,
-            delete_excess_run_files = False):
+#%%
+### Create a new input file
+def Create_New_Input(pixel_array, parameter_df, pdef, step):
     """
-    Evaluates the current step.
-    
-    This function takes the parameter vector and builds a corresponding TSUNAMI input. 
-    It then runs that input on the UTK cluster. The result is then evaluated. 
-    Sensitivities and other inofrmation are extracted and evaluated s.t. they can be
-    fed to the next step. This includes converting the relative sensitivities to absolute derivatives.
+    Creates a new MC Transport run file.
+
+    The purpose of this function is to take the parameters being optimized by ADAM and convert them into
+    an input file for the user's MC transport/sensitivity analysis of choice. 
+    This function follows the following steps:
+        1. Use transformation function defined in problem definition to convert the optimization parameters to density factors.
+        2. Apply density factors to the base material definitions for each pixel in the pixel array.
+        3. Create a MC Transport/sensitivity input file and fill the material definition with that of each pixel.
 
     Parameters
     ----------
-    parameter_df : _type_
-        _description_
-    pixel_array : _type_
-        _description_
-    steps : _type_
-        _description_
-    generations : _type_
-        _description_
-    template_file : str, optional
-        _description_, by default 'template.inp'
-    job_flag : str, optional
-        _description_, by default "tsunami_job"
-    build_input : bool, optional
-        _description_, by default True
-    submit_job : bool, optional
-        _description_, by default True
-    delete_excess_run_files : bool, optional
-        _description_, by default False
-
-    Returns
-    -------
-    _type_
-        _description_
+    pixel_array : object array
+        Array of pixel objects describing the problem geometry.
+    parameter_df : DataFrame
+        Contains all ADAM parameters, theta, mt, vt
+    pdef : object
+        User defined problem definition object.
+    step : int
+        Step of the Gradient descent algorithm currently being executed.
     """
+
+    # apply a transformation of variables to all theta in ADAM parameter dataframe
+    density_factor_df = parameter_df.filter(like='theta').apply(pdef.transformation_function)
     
-    
-    
-    ### Use parameter data frame to update the base material dictionary for each pixel in pixel array
-    pixel_array_functions.get_updated_materials_in_pixel_array(pixel_array, parameter_df)
-    
-    
-    
+    # Use parameter data frame to update the base material dictionary for each pixel in pixel array
+    for i in range(len(pixel_array)):
+        pixel_array[i].apply_density_factors(density_factor_df.iloc[i])    
     
     ### Building scale input
     
-    if build_input:
+    if pdef.build_input:
 
         # generate random number seed
         random_number = random.randint(1152921504606846976,18446744073709551615)
         hex_number = str(hex(random_number))
         hex_number = hex_number [2:]
         
-        # create input file from template file
-        scale_interface.create_tsunami_input(template_file, job_flag+'.inp', steps, hex_number, generations)
+        # create input file from template file - no material data
+        scale_interface.create_tsunami_input(pdef.template_file, 'tsunami_job.inp', step, hex_number, pdef.generations)
         
-        # write each pixel's material string to target input file
-        pixel_array_functions.write_material_strings_to_template(pixel_array, job_flag+'.inp')
-    
-        # create an .sh file for TORQUE job submission on the UTK NE cluster
-        cluster_interface.build_scale_submission_script(job_flag, solve_type = 'tsunami')
+        # write each pixel's material data to the target input file
+        with open('tsunami_job.inp', 'r') as f:
+            readlines = f.readlines()
+            f.close()
+        with open('tsunami_job.inp', 'w') as f:
+            for line in readlines:
+                f.write(line)
+                if line.startswith('read composition'):
+                    for each_pixel in pixel_array:
+                        f.write(scale_interface.material_string(each_pixel))
         
     else:
         print("Skipping building scale input file.")
-    
-
-
-
-    ### Submit tsunami job and wait on it to complete
-    
-    if submit_job:
-        assert build_input == True, "You didn't build a new input, but you're submitting to the cluster. Quite irregular."
-        cluster_interface.submit_jobs_to_necluster(job_flag)
-        cluster_interface.wait_on_submitted_job(job_flag)
-    else:
-        print("Not submitting the tsunami job.")
-        
-        
-    
-    
-    ### Pull out keff and sensitivities from job
-    
-    output_file = job_flag+'.out'
-    sensitivity_dictionary, keff = scale_interface.read_total_sensitivity_by_nuclide(output_file)
-    
-    # convert scale IDed sensitivities to sensitivities specific to each pixel/pixel region in the pixel_array
-    pixel_array_functions.get_nuclide_sensitivites_for_each_pixel(pixel_array, sensitivity_dictionary)
- 
-
-
- 
-    ### Delete un-necessary_files from the previous job
-    
-    if delete_excess_run_files:
-        cluster_interface.remove_unwanted_files()
-
-    
-       
-    return keff
 
 
 
 
+#%% initialize pixel array
 
 
-# In[3]:
 
 
+#%%%
 
-def ADAM(parameter_df,
-        pixel_array, 
-        material_dict_base,
-        template_file,
-        generations = 10,
-        submit_job = True,
-        stopping_value = 0.001,
-        number_of_steps = 10,
-        alpha_value = 0.1, 
-        beta_1 = 0.9,
-        beta_2 = 0.999,
-        epsilon = 1,
-        write_output = False,
-        starting_step = 1,
-        starting_first_moment=[],
-        starting_second_moment=[]):
+def update(step, pixel_array, pdef):
     """
-    Executes ADAM gradient descent algorithm at the highest level.
+    Performs the ADAM gradient descent update on the optimization parameters.
+
+    This is the primary control function for the algorithm. 
+
+    The parameter_df variable is a panda DataFrame that holds all of the ADAM variables, that is:
+        theta   :   optimization parameters
+          mt    :   first moment
+          vt    :   second moment
+    Each of the above ADAM variables is housed in a vector with respect to each pixel. 
+    Often it is the case that a single pixel will have multiple optimization parameters applied to different materials within it.
+    In such a case, the ADAM variables become indexed vectors where the index in the data frame indicates which material that parameter will be
+    applied to and the location in the vector indicates the geometric location of that pixel.
+    
+    The parameter_df variable is defined from the previous step (or from the problem definition if on step 1). 
+    Then that sensitivities are read from the MC transport/sensitivity calculation and converted to derivatives
+    with respect to the optimization parameters. The ADAM update is performed and the new parameters are saved.
+    Finally, a new set of MC transport/sensitivity input files is created.
 
     Parameters
     ----------
-    sensitivities : TYPE
-        DESCRIPTION.
-    betas : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    new_sensitivities : TYPE
-        DESCRIPTION.
-
+    step : int
+        Step of the Gradient descent algorithm currently being executed.
+    pixel_array : object array
+        Array of pixel objects describing the problem geometry.
+    pdef : object
+        User defined problem definition object.
     """
-    
-    steps = starting_step
-      
-    
-    if starting_step > 1:
-        first_moment = starting_first_moment
-        second_moment = starting_second_moment
-    else:   
-        # initializae first/second moment vectors as all 0 for very first step - could be better informed
-        first_moment_vector = pd.DataFrame(np.zeros([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
-        second_moment_vector = pd.DataFrame(np.zeros([len(parameter_df.index),len(parameter_df.columns)]),columns=parameter_df.columns)
-       
-       
-    ### Stopping_criteria not implemented currently, only # of steps
-    # stopping_criteria = False
-    # parameters = parameter_df
-       
-    # only write new output csv files if we are starting at step 1
-    if starting_step == 1:
-        if write_output:
-            
-            print("\nWARNING: Need to update print-to-csv functions to be dynamic WRT parameter definitions\n")
-            
-            with open('output.csv', 'w') as output_file:
+
+    if step == 1:
+        # If we are at step 1:
+                # parameter_df = initial parameters given by user
+                # create csv files to save data
+                # do not read sensitivities from output files
+
+        parameter_df = pdef.parameter_df
+
+        if pdef.write_output:
+
+            if os.path.isdir('parameter_data'):
+                pass
+            else:
+                os.mkdir('parameter_data')
+
+            with open('parameter_data/output.csv', 'w') as output_file:
                 output_file.write("step, keff\n")
-            with open('parameters.csv', 'w') as output_file:
-                # string = 'step, keff,'
-                # string += f' {parameter_df.keys()[0]} [1x{len(parameter_df)}, {parameter_df.keys()[1]} [1x{len(parameter_df)}\n'
-                output_file.write("step, keff, fuel_betas_this_step [1x1936], mod_betas_this_step [1x1936]\n")
-            with open('first_moments.csv', 'w') as output_file:
-                output_file.write("step, keff, fuel_1st_moment_vectors_this_step [1x1936], mod_1st_moment_vectors_this_step [1x1936], fuel_2nd_moment_vectors_this_step [1x1936], mod_2nd_moment_vectors_this_step [1x1936]\n")
-            with open('second_moments.csv', 'w') as output_file:
-                output_file.write("step, keff, fuel_2nd_moment_vectors_this_step [1x1936], mod_2nd_moment_vectors_this_step [1x1936]\n")
 
-       
+            parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
+
+        ### Create a new input file
+        Create_New_Input(pixel_array, parameter_df, pdef, step)
 
 
-    ### Main loop
-    while steps < number_of_steps + 1:
+    else:
+
+
+
+        ### Read parameters from previous step
+        parameter_df = pd.read_csv(f'parameter_data/parameters_{step-1}.csv')
         
-        print("Step #:", steps)
-        job_flag = 'tsunami_job_' + str(steps)
+
+
+        ### Pull out keff and sensitivities from previous job
+        output_file = 'tsunami_job.out'
+        #!!! if file does not exist throw error
+
+        # outputs keff and writes derivative dfs to each respective pixel
+        # derivatives are absolute but wrt to each nuclide within each region
+        keff = scale_interface.read_total_sensitivity_by_nuclide(output_file, pixel_array)
+
+
+        # combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors (chain rule)
+        derivatives_wrt_parameters = []
+        for each_pixel in pixel_array:
+            each_pixel.combine_derivatives_wrt_nuclides(pdef.material_dict_base)
+            each_pixel.combine_region_derivatives()
+            derivatives_wrt_parameters.append(each_pixel.derivatives_wrt_parameters)
+        derivative_df = pd.DataFrame(derivatives_wrt_parameters)
         
+        # chain rule for transformation function to get derivatives wrt optimization parameters
+        obj_derivative_df = pdef.objective_derivative(derivative_df, parameter_df.filter(like='theta'))
         
-        # apply a transformation of variables to the domain
-        transformed_parameters = parameter_df.apply(objective_function_definition.transformation_function)
-         
-        
-        
-        ### Evaluate with TSUNAMI, sensitivities/derivatives stored in pixel_array objects
-        keff = evaluate(transformed_parameters,
-                        pixel_array,
-                        steps,
-                        generations,
-                        template_file = template_file, # 'spent_fuel_cask_template.inp', #'tsunami_template_file_10x10.inp'
-                        job_flag = job_flag,                    
-                        submit_job = submit_job)
-        
-        
-        
-        # combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors
-        print("Need to update documentation to maintain consistent verbiage for multiplication factors or optimization parameters")
-        derivative_df = pixel_array_functions.get_combined_derivatives(pixel_array, material_dict_base)
-       
-        
-       
-        # chain rule for transofrmation function to get derivatives wrt optimization parameters
-        obj_derivative_df = objective_function_definition.objective_derivative(derivative_df, parameter_df)
-       
-        
-       
+
         ### perform the ADAM algorithm update (remember, this is a minimization)
-        first_moment_df = (beta_1 * first_moment_vector  + (1 - beta_1) * obj_derivative_df)
-        second_moment_df = (beta_2 * second_moment_vector + (1 - beta_2) * obj_derivative_df**2) 
-        first_moment_hat_df = (first_moment_df / (1 - beta_1**steps))
-        second_moment_hat_df = (second_moment_df/ (1 - beta_2**steps))
-       
-        new_parameter_df = (parameter_df - (alpha_value * first_moment_hat_df) / (np.sqrt(second_moment_hat_df) + epsilon))
-                             
-            
-            
-        ### Writing out the output file                                      
-        if write_output:
-            with open('output.csv', 'a') as output_file:
-                write_string = str(steps) + "," + str(keff)
-                output_file.write(write_string + "\n")
-            with open('parameters.csv', 'a') as par_file:
-                np.savetxt(par_file, [np.array(parameter_df).flatten()], delimiter=',')
-            with open('first_moments.csv', 'a') as fm_file:
-                np.savetxt(fm_file, [np.array(first_moment_df).flatten()], delimiter=',')
-            with open('second_moments.csv', 'a') as sm_file:
-                np.savetxt(sm_file, [np.array(second_moment_df).flatten()], delimiter=',')
-                
-                
-                
-        # redefine parameters as new updated parameters, increase step number, repeat in while loop
-        parameter_df = new_parameter_df
-        steps += 1
+        theta = np.array(parameter_df.filter(like='theta'))
+        dObj_dtheta = np.array(obj_derivative_df)
+        mt = np.array(parameter_df.filter(like='mt'))
+        vt = np.array(parameter_df.filter(like='vt'))
+
+        mt_next = (pdef.beta_1 * mt + (1 - pdef.beta_1) * dObj_dtheta)
+        vt_next = (pdef.beta_2 * vt + (1 - pdef.beta_2) * dObj_dtheta**2) 
+        mt_next_hat = (mt_next / (1 - pdef.beta_1**step))
+        vt_next_hat = (vt_next/ (1 - pdef.beta_2**step))
         
+        new_theta = (theta - (pdef.alpha_value * mt_next_hat) / (np.sqrt(vt_next_hat) + pdef.epsilon))
+
+
+        # check for any NaNs
+        if np.isnan(new_theta).any():
+            print(step)
+            raise ValueError("NaN in new_theta, step {step}")
+
+
+        # redefine parameter dataframe
+        parameter_df = pd.DataFrame()
+        for i in range(pdef.max_parameters):
+            temporary_df = pd.DataFrame({f'theta{i}':   new_theta.T[i],
+                                            f'mt{i}':   mt_next.T[i],
+                                            f'vt{i}':   vt_next.T[i]})
+            parameter_df = pd.concat([parameter_df,temporary_df], axis=1)
+
+
+        ### Save new parameters
+        if pdef.write_output:
+            parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
+            with open('parameter_data/output.csv', 'a') as output_file:
+                    output_file.write(f"{step}, {keff}\n")
+
+        ### Create a new input file
+        Create_New_Input(pixel_array, parameter_df, pdef, step)
 
     
 
-    
+# %%
