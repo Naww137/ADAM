@@ -1,5 +1,5 @@
-Usage
-=====
+How to Use The ADAM Project
+===========================
 
 Installation
 ------------
@@ -15,6 +15,8 @@ Methodology
 -----------
 Write up some of the methodology here.
 
+
+.. _usersguide:
 
 Users Guide
 -----------

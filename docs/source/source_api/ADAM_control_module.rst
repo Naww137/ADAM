@@ -5,3 +5,4 @@ This is the primary control module for the ADAM algorithm, all other modules/fun
 
 .. automodule:: ADAM.ADAM_control_Module
       :members:
+

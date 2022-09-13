@@ -16,9 +16,9 @@ def Create_New_Input(pixel_array, parameter_df, pdef, step):
     The purpose of this function is to take the parameters being optimized by ADAM and convert them into
     an input file for the user's MC transport/sensitivity analysis of choice. 
     This function follows the following steps:
-        1. Use transformation function defined in problem definition to convert the optimization parameters to density factors.
-        2. Apply density factors to the base material definitions for each pixel in the pixel array.
-        3. Create a MC Transport/sensitivity input file and fill the material definition with that of each pixel.
+    1. Use transformation function defined in problem definition to convert the optimization parameters to density factors.
+    2. Apply density factors to the base material definitions for each pixel in the pixel array.
+    3. Create a MC Transport/sensitivity input file and fill the material definition with that of each pixel.
 
     Parameters
     ----------
@@ -82,9 +82,9 @@ def update(step, pixel_array, pdef):
     This is the primary control function for the algorithm. 
 
     The parameter_df variable is a panda DataFrame that holds all of the ADAM variables, that is:
-        theta   :   optimization parameters
-          mt    :   first moment
-          vt    :   second moment
+    theta   :   optimization parameters
+    mt    :   first moment
+    vt    :   second moment
     Each of the above ADAM variables is housed in a vector with respect to each pixel. 
     Often it is the case that a single pixel will have multiple optimization parameters applied to different materials within it.
     In such a case, the ADAM variables become indexed vectors where the index in the data frame indicates which material that parameter will be
