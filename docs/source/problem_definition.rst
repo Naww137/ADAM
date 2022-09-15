@@ -5,7 +5,7 @@ Problem Definition
 
 The Problem Defintion is an object that houses all information about the optimization problem being solved.
 The user must edit this file directly in order to change any of th attributes. Then upon running the algorithm (run_adam.py), the 
-problem definition should be intialized and passed to the :cite:`ADAM Control Module <ADAM_control_module>`. 
+problem definition should be intialized and passed to the :ref:`ADAM Control Module <ADAM_control_module>`. 
 
 .. note::
     While this file can be edited/replaced by a user generated file.py, the filename and attributes must be the same or the ADAM package will not find this information.
@@ -21,10 +21,41 @@ The following secitons will cover each of these in detail, but a breif overview 
 
 ADAM Runtime Parameters
 -----------------------
-stuff
+
+These parameters include user options as well as hyper parameters for the ADAM algorithm. 
+
+.. py:function:: Problem_Definition.ADAM_Runtime_Parameters()
+
+   Instantiates runtime attributes for the Problem_Definition objeect passed to ADAM.
+   
+   :param write_output: Whether or not to write the variables to a csv with each step.
+   :type write_output: Boolean
+   :param build_input: Whether or not to build a new input with each step.
+   :type build_input: Boolean
+   :param template_file: Filename (or full path if not in the same directory) to the MC solver template file.
+   :type template_file: str
+   :param generations: Number of neutron generations to run for each MC solve.
+   :type generations: int
+   :param temperature: Temperature of the material pixels in the system.
+   :type temperature: int or float
+
+   :param beta_1: Hyper parameter of the ADAM algorithm.
+   :type beta_1: float
+   :param beta_2: Hyper parameter of the ADAM algorithm.
+   :type beta_2: float
+   :param epsilon: Hyper parameter of the ADAM algorithm.
+   :type epsilon: float
+   :param alpha_value: Hyper parameter of the ADAM algorithm.
+   :type alpha_value: float
+
+   :return: None - instantiates object attributes.
+   :rtype: None
+
 
 Geometry & Material Definition
 ------------------------------
+
+
 The geometric space of the system is pixellated, this is motivated in part by the types of problems being solved and also by the conveinient bookeeping allowed by object arrays.
 The :ref:`pixel object <pixel>` represents a single repeating unitcell in the geometry. One of it's attributes is a pixel id that is mapped to a geometric 
 definition in the MC solver. Within each pixel, the user can define one or more regions in which there will be one or more material(s) and corresponding
@@ -81,4 +112,4 @@ If using ADAM as-is with SCALE and the UTK NE cluster, the isotope keys must be 
 Objective & Transformation Funtions
 -----------------------------------
 
-:math:`\frac{ \sum_{t=0}^{N}f(t,k) }{N}`
+:math:`\\frac{ \\sum_{t=0}^{N}f(t,k) }{N}`

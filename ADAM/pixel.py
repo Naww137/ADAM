@@ -46,7 +46,10 @@ class pixel:
         
         The updated_materials_definition attribute for the pixel object is created. This dataframe is created by multiplying the density 
         factors (transformed optimization parameters) to the base isotopic concentrations (material_df_base).
-        .. math:: N_{updated} = N_{base}*T(\theta)
+        
+        .. math:: 
+            N_{updated} = N_{base}*T(\\theta)
+
         Where T is the user defined transformation function.
 
         Parameters
