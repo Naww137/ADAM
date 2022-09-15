@@ -30,7 +30,8 @@ class Problem_Definition:
         self.write_output = True
         self.build_input = True
         # self.template_file = 'spent_fuel_cask_template.inp'
-        self.template_file = 'tsunami_template_file_10x10.inp'
+        # self.template_file = 'tsunami_template_file_10x10.inp'
+        self.template_file = 'tsunami_template_file_44x44.inp'
         self.generations = 10
         self.temperature = 300
 
@@ -58,14 +59,15 @@ class Problem_Definition:
 
     def Geometry(self):
             
-        self.number_of_pixels = 100
+        self.number_of_pixels = 1936
+        # self.number_of_pixels = 289
 
         ### Define geometric regions (repeating regions in this case) and the materials present within each
         # self.region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
         self.region_definition = {'whole_pixel':['fuel','moderator']}
 
         ### Define the optimization parameters corresponding to the geometric region definition
-        # self.parameter_definition = {'rod':['optimization_parameter_1','optimization_parameter_2'], 'gap':['optimization_parameter_2'], 'clad':['optimization_parameter_1','optimization_parameter_2']}
+        # self.parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
         self.parameter_definition = {'whole_pixel':['theta0','theta1']}
 
 
@@ -128,7 +130,9 @@ class Problem_Definition:
                 print(f'For region "{region}" the material "{material}" will be controlled by {parameter}')
         print()
 
-        input("Press enter to continue and run ADAM...")
+        input("Press enter to confirm...\n")
+        print(f"You are runnning the template {self.template_file} with {self.number_of_pixels} pixel\n")
+        input("Press enter to confirm and run ADAM...")
 
 
     def transformation_function(self, x):
@@ -151,38 +155,53 @@ class Problem_Definition:
 
         """
         
-        y = np.exp(x)
+        # exponential
+        # y = np.exp(x)
+
+        # sigmoid
+        y = 1/(1+np.exp(-x))
         
         return y
 
 
 
-    def objective_derivative(self, derivative_df,parameter_df):
+    def objective_derivative(self, derivative_df, parameter_df):
         """
         Gets the derivative of the objective function given the derivatives of the optimized parameters from the previous step.
 
         Parameters
         ----------
-        derivative_df : TYPE
-            DESCRIPTION.
-        parameter_df : TYPE
-            DESCRIPTION.
+        derivative_df : DataFrame
+            DataFrame containing a column with derivatives $\frac{\deltak}{\deltaN_f}$ for each optimization parameter. 
+            These are derivatives of k-effective with respect to the density factors, they are passed through this function to get derivatives of the objective
+            function with respect to the theta optimization parameters. The column keys will correspond the the optimization parameter controlling that column and the index within a column 
+            corresponds to pixel location.
+        parameter_df : DataFrame
+            DataFrame containing the theta parameters for the given step. This DataFrame has the same format as the derivative_df with columns 
+            keyed by the optimizatino parameter they apply to.
 
         Returns
         -------
-        new_sensitivities : TYPE
-            DESCRIPTION.
+        obj_derivative_df : DataFrame
+            DataFrame of the same format (column keys = optimization parameters for that column of pixels) containing derivatives of the objective function
+            with respect to the optimization parameters "theta".
 
         """
         derivative_np = np.array(derivative_df)
         parameter_np = np.array(parameter_df)
         
-        r = 100
-        v = 2
-        beta_limit = 20
+        # p3 original, exp transform with penalty
+        # r = 100
+        # v = 2
+        # beta_limit = 20
+        # obj_derivative_np = derivative_np - (-r*v*np.exp(-v*(beta_limit+parameter_np)) + r*v*np.exp(v*(parameter_np-beta_limit)))
 
-        obj_derivative_np = derivative_np - (-r*v*np.exp(-v*(beta_limit+parameter_np)) + r*v*np.exp(v*(parameter_np-beta_limit)))
-        obj_derivative_df = pd.DataFrame(obj_derivative_np, columns=np.array(parameter_df.columns))
+        # p3 with sigmoid and no penalty - currently ignoring contant Nbase that should be multiplied by the second derivative
+        obj_derivative_np = -derivative_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np)**2))
         
+
+
+        obj_derivative_df = pd.DataFrame(obj_derivative_np, columns=np.array(parameter_df.columns))
+
         return obj_derivative_df
 
