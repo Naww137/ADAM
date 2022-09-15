@@ -3,6 +3,7 @@
 *.out
 *.csv
 .DS_Store
+*.sdf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
