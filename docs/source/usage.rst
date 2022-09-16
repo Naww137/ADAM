@@ -7,6 +7,7 @@ Installation
 To use **ADAM**, clone this github repository then install it in development mode using pip:
 
 :code:`git clone https://github.com/Naww137/ADAM TARGETDIR`
+
 :code:`pip install -e TARGETDIR`
 
 It is reccomended to install this package within a virtual environment.
@@ -17,6 +18,7 @@ follow the next few steps.
 First make sure you have sphinx installed as well as the cloud theme
 
 :code:`pip install sphinx`
+
 :code:`pip install cloud-sptheme`
 
 From the directory where you cloned ADAM run:
