@@ -12,8 +12,8 @@ To use **ADAM**, clone this github repository then install it in development mod
 
 It is reccomended to install this package within a virtual environment.
 
-This project comes with significant documentation. In order to compile this documentation with `sphinx <https://www.sphinx-doc.org/en/master/>`_
-follow the next few steps.
+This project comes with significant documentation. In order to devlop and compile this documentation with `sphinx <https://www.sphinx-doc.org/en/master/>`_
+follow the next few steps. If you are only a user, all of the ADAM documentation is hosted on this site.
 
 First make sure you have sphinx installed as well as the cloud theme
 
