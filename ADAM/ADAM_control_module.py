@@ -132,6 +132,10 @@ def update(step, pixel_array, pdef):
     else:
 
 
+        if os.path.isdir('parameter_data'):
+            pass
+        else:
+            raiseValueError("Starting from step>1 but no parameter_data is present. Cannot find directory parameter_data/")
 
         ### Read parameters from previous step
         parameter_df = pd.read_csv(f'parameter_data/parameters_{step-1}.csv')

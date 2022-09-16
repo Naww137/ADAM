@@ -131,7 +131,7 @@ class Problem_Definition:
         print()
 
         input("Press enter to confirm...\n")
-        print(f"You are runnning the template {self.template_file} with {self.number_of_pixels} pixel\n")
+        print(f"You are runnning the template {self.template_file} with {self.number_of_pixels} pixels\n")
         input("Press enter to confirm and run ADAM...")
 
 
