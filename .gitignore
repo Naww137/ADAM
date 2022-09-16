@@ -4,6 +4,7 @@
 *.csv
 .DS_Store
 *.sdf
+*.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
