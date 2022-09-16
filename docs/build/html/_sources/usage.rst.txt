@@ -25,10 +25,11 @@ From the directory where you cloned ADAM run:
 
 :code:`sphinx-build -b html docs/source/ docs/build/html`
 
-Then, navigate to the docs/ directory and run:
+To update documetation from the restructured text files without having to rebuild, navigate to the docs/ directory and run:
 
 :code:`make html`
 
+Any changes to the conf.py file will not take effect unless you rebuild.
 The HTML files will be created in docs/build/html. The main page can be reached by openning the index.html file. 
 This will launch an HTML page and any of the subsequent pages can be reached from here.
 

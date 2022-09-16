@@ -198,6 +198,10 @@
     <span class="k">else</span><span class="p">:</span>
 
 
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">raiseValueError</span><span class="p">(</span><span class="s2">&quot;Starting from step&gt;1 but no parameter_data is present. Cannot find directory parameter_data/&quot;</span><span class="p">)</span>
 
         <span class="c1">### Read parameters from previous step</span>
         <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">)</span>
