@@ -1,0 +1,333 @@
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADAM.ADAM_control_Module &#8212; ADAM 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+
+    
+    
+     
+        <script src="../../_static/jquery.cookie.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ADAM.ADAM_control_Module</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for ADAM.ADAM_control_Module</h1><div class="highlight"><pre>
+<span></span>
+<span class="c1">#%%</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">ADAM</span> <span class="kn">import</span> <span class="n">scale_interface</span>
+
+
+<span class="c1">#%%</span>
+<span class="c1">### Create a new input file</span>
+<div class="viewcode-block" id="Create_New_Input"><a class="viewcode-back" href="../../source_api/ADAM_control_module.html#ADAM.ADAM_control_Module.Create_New_Input">[docs]</a><span class="k">def</span> <span class="nf">Create_New_Input</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">pdef</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new MC Transport run file.</span>
+
+<span class="sd">    The purpose of this function is to take the parameters being optimized by ADAM and convert them into</span>
+<span class="sd">    an input file for the user&#39;s MC transport/sensitivity analysis of choice. </span>
+<span class="sd">    This function follows the following steps:</span>
+<span class="sd">    1. Use transformation function defined in problem definition to convert the optimization parameters to density factors.</span>
+<span class="sd">    2. Apply density factors to the base material definitions for each pixel in the pixel array.</span>
+<span class="sd">    3. Create a MC Transport/sensitivity input file and fill the material definition with that of each pixel.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pixel_array : object array</span>
+<span class="sd">        Array of pixel objects describing the problem geometry.</span>
+<span class="sd">    parameter_df : DataFrame</span>
+<span class="sd">        Contains all ADAM parameters, theta, mt, vt</span>
+<span class="sd">    pdef : object</span>
+<span class="sd">        User defined problem definition object.</span>
+<span class="sd">    step : int</span>
+<span class="sd">        Step of the Gradient descent algorithm currently being executed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># apply a transformation of variables to all theta in ADAM parameter dataframe</span>
+    <span class="n">density_factor_df</span> <span class="o">=</span> <span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">transformation_function</span><span class="p">)</span>
+    
+    <span class="c1"># Use parameter data frame to update the base material dictionary for each pixel in pixel array</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">)):</span>
+        <span class="n">pixel_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">apply_density_factors</span><span class="p">(</span><span class="n">density_factor_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>    
+    
+    <span class="c1">### Building scale input</span>
+    
+    <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">build_input</span><span class="p">:</span>
+
+        <span class="c1"># generate random number seed</span>
+        <span class="n">random_number</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1152921504606846976</span><span class="p">,</span><span class="mi">18446744073709551615</span><span class="p">)</span>
+        <span class="n">hex_number</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">random_number</span><span class="p">))</span>
+        <span class="n">hex_number</span> <span class="o">=</span> <span class="n">hex_number</span> <span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        
+        <span class="c1"># create input file from template file - no material data</span>
+        <span class="n">scale_interface</span><span class="o">.</span><span class="n">create_tsunami_input</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">template_file</span><span class="p">,</span> <span class="s1">&#39;tsunami_job.inp&#39;</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">hex_number</span><span class="p">,</span> <span class="n">pdef</span><span class="o">.</span><span class="n">generations</span><span class="p">)</span>
+        
+        <span class="c1"># write each pixel&#39;s material data to the target input file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;tsunami_job.inp&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">readlines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;tsunami_job.inp&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">readlines</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;read composition&#39;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">scale_interface</span><span class="o">.</span><span class="n">material_string</span><span class="p">(</span><span class="n">each_pixel</span><span class="p">))</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipping building scale input file.&quot;</span><span class="p">)</span></div>
+
+
+
+
+<span class="c1">#%% initialize pixel array</span>
+
+
+
+
+<span class="c1">#%%%</span>
+
+<div class="viewcode-block" id="update"><a class="viewcode-back" href="../../source_api/ADAM_control_module.html#ADAM.ADAM_control_Module.update">[docs]</a><span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">,</span> <span class="n">pdef</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs the ADAM gradient descent update on the optimization parameters.</span>
+
+<span class="sd">    This is the primary control function for the algorithm. </span>
+
+<span class="sd">    The parameter_df variable is a panda DataFrame that holds all of the ADAM variables, that is:</span>
+<span class="sd">    theta   :   optimization parameters</span>
+<span class="sd">    mt    :   first moment</span>
+<span class="sd">    vt    :   second moment</span>
+<span class="sd">    Each of the above ADAM variables is housed in a vector with respect to each pixel. </span>
+<span class="sd">    Often it is the case that a single pixel will have multiple optimization parameters applied to different materials within it.</span>
+<span class="sd">    In such a case, the ADAM variables become indexed vectors where the index in the data frame indicates which material that parameter will be</span>
+<span class="sd">    applied to and the location in the vector indicates the geometric location of that pixel.</span>
+<span class="sd">    </span>
+<span class="sd">    The parameter_df variable is defined from the previous step (or from the problem definition if on step 1). </span>
+<span class="sd">    Then that sensitivities are read from the MC transport/sensitivity calculation and converted to derivatives</span>
+<span class="sd">    with respect to the optimization parameters. The ADAM update is performed and the new parameters are saved.</span>
+<span class="sd">    Finally, a new set of MC transport/sensitivity input files is created.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    step : int</span>
+<span class="sd">        Step of the Gradient descent algorithm currently being executed.</span>
+<span class="sd">    pixel_array : object array</span>
+<span class="sd">        Array of pixel objects describing the problem geometry.</span>
+<span class="sd">    pdef : object</span>
+<span class="sd">        User defined problem definition object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># If we are at step 1:</span>
+                <span class="c1"># parameter_df = initial parameters given by user</span>
+                <span class="c1"># create csv files to save data</span>
+                <span class="c1"># do not read sensitivities from output files</span>
+
+        <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pdef</span><span class="o">.</span><span class="n">parameter_df</span>
+
+        <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">write_output</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">):</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;parameter_data/output.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file</span><span class="p">:</span>
+                <span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;step, keff</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">parameter_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1">### Create a new input file</span>
+        <span class="n">Create_New_Input</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">pdef</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+
+    <span class="k">else</span><span class="p">:</span>
+
+
+
+        <span class="c1">### Read parameters from previous step</span>
+        <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">)</span>
+        
+
+
+        <span class="c1">### Pull out keff and sensitivities from previous job</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="s1">&#39;tsunami_job.out&#39;</span>
+        <span class="c1">#!!! if file does not exist throw error</span>
+
+        <span class="c1"># outputs keff and writes derivative dfs to each respective pixel</span>
+        <span class="c1"># derivatives are absolute but wrt to each nuclide within each region</span>
+        <span class="n">keff</span> <span class="o">=</span> <span class="n">scale_interface</span><span class="o">.</span><span class="n">read_total_sensitivity_by_nuclide</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">)</span>
+
+
+        <span class="c1"># combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors (chain rule)</span>
+        <span class="n">derivatives_wrt_parameters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
+            <span class="n">each_pixel</span><span class="o">.</span><span class="n">combine_derivatives_wrt_nuclides</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">material_dict_base</span><span class="p">)</span>
+            <span class="n">each_pixel</span><span class="o">.</span><span class="n">combine_region_derivatives</span><span class="p">()</span>
+            <span class="n">derivatives_wrt_parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">derivatives_wrt_parameters</span><span class="p">)</span>
+        <span class="n">derivative_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">derivatives_wrt_parameters</span><span class="p">)</span>
+        
+        <span class="c1"># chain rule for transformation function to get derivatives wrt optimization parameters</span>
+        <span class="n">obj_derivative_df</span> <span class="o">=</span> <span class="n">pdef</span><span class="o">.</span><span class="n">objective_derivative</span><span class="p">(</span><span class="n">derivative_df</span><span class="p">,</span> <span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">))</span>
+        
+
+        <span class="c1">### perform the ADAM algorithm update (remember, this is a minimization)</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">))</span>
+        <span class="n">dObj_dtheta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj_derivative_df</span><span class="p">)</span>
+        <span class="n">mt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;mt&#39;</span><span class="p">))</span>
+        <span class="n">vt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;vt&#39;</span><span class="p">))</span>
+
+        <span class="n">mt_next</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span> <span class="o">*</span> <span class="n">mt</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dObj_dtheta</span><span class="p">)</span>
+        <span class="n">vt_next</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span> <span class="o">*</span> <span class="n">vt</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">dObj_dtheta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> 
+        <span class="n">mt_next_hat</span> <span class="o">=</span> <span class="p">(</span><span class="n">mt_next</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span><span class="o">**</span><span class="n">step</span><span class="p">))</span>
+        <span class="n">vt_next_hat</span> <span class="o">=</span> <span class="p">(</span><span class="n">vt_next</span><span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span><span class="o">**</span><span class="n">step</span><span class="p">))</span>
+        
+        <span class="n">new_theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">alpha_value</span> <span class="o">*</span> <span class="n">mt_next_hat</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vt_next_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">pdef</span><span class="o">.</span><span class="n">epsilon</span><span class="p">))</span>
+
+
+        <span class="c1"># check for any NaNs</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">new_theta</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;NaN in new_theta, step </span><span class="si">{step}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+        <span class="c1"># redefine parameter dataframe</span>
+        <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">max_parameters</span><span class="p">):</span>
+            <span class="n">temporary_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="sa">f</span><span class="s1">&#39;theta</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">new_theta</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                            <span class="sa">f</span><span class="s1">&#39;mt</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">mt_next</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                            <span class="sa">f</span><span class="s1">&#39;vt</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">vt_next</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]})</span>
+            <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">parameter_df</span><span class="p">,</span><span class="n">temporary_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+        <span class="c1">### Save new parameters</span>
+        <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">write_output</span><span class="p">:</span>
+            <span class="n">parameter_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;parameter_data/output.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file</span><span class="p">:</span>
+                    <span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">keff</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1">### Create a new input file</span>
+        <span class="n">Create_New_Input</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">pdef</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+
+    
+
+<span class="c1"># %%</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ADAM.ADAM_control_Module</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Walton.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

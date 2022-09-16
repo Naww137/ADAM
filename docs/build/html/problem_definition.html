@@ -1,0 +1,269 @@
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Problem Definition &#8212; ADAM 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    
+    
+     
+        <script src="_static/jquery.cookie.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Source API" href="source_api/index.html" />
+    <link rel="prev" title="How to Use The ADAM Project" href="usage.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="source_api/index.html" title="Source API"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="usage.html" title="How to Use The ADAM Project"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Problem Definition</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="problem-definition">
+<h1>Problem Definition<a class="headerlink" href="#problem-definition" title="Permalink to this heading">¶</a></h1>
+<p id="id1">The Problem Defintion is an object that houses all information about the optimization problem being solved.
+The user must edit this file directly in order to change any of th attributes. Then upon running the algorithm (run_adam.py), the
+problem definition should be intialized and passed to the <a class="reference internal" href="source_api/ADAM_control_module.html#id1"><span class="std std-ref">ADAM Control Module</span></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While this file can be edited/replaced by a user generated file.py, the filename and attributes must be the same or the ADAM package will not find this information.</p>
+</div>
+<p>The information housed in the Problem Definition is separated into the following subsections:</p>
+<ul class="simple">
+<li><p>ADAM Gradient Descent runtime parameters</p></li>
+<li><p>System geometry and materials</p></li>
+<li><p>Objective &amp; Transformation Funtions</p></li>
+</ul>
+<p>The following secitons will cover each of these in detail, but a breif overview of the geometry setup is likely beneficial.</p>
+<section id="adam-runtime-parameters">
+<h2>ADAM Runtime Parameters<a class="headerlink" href="#adam-runtime-parameters" title="Permalink to this heading">¶</a></h2>
+<p>These parameters include user options as well as hyper parameters for the ADAM algorithm.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="Problem_Definition.ADAM_Runtime_Parameters">
+<span class="sig-prename descclassname"><span class="pre">Problem_Definition.</span></span><span class="sig-name descname"><span class="pre">ADAM_Runtime_Parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Problem_Definition.ADAM_Runtime_Parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiates runtime attributes for the Problem_Definition objeect passed to ADAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>write_output</strong> (<em>Boolean</em>) – Whether or not to write the variables to a csv with each step.</p></li>
+<li><p><strong>build_input</strong> (<em>Boolean</em>) – Whether or not to build a new input with each step.</p></li>
+<li><p><strong>template_file</strong> (<em>str</em>) – Filename (or full path if not in the same directory) to the MC solver template file.</p></li>
+<li><p><strong>generations</strong> (<em>int</em>) – Number of neutron generations to run for each MC solve.</p></li>
+<li><p><strong>temperature</strong> (<em>int</em><em> or </em><em>float</em>) – Temperature of the material pixels in the system.</p></li>
+<li><p><strong>beta_1</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
+<li><p><strong>beta_2</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
+<li><p><strong>alpha_value</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None - instantiates object attributes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="geometry-material-definition">
+<h2>Geometry &amp; Material Definition<a class="headerlink" href="#geometry-material-definition" title="Permalink to this heading">¶</a></h2>
+<p>The geometric space of the system is pixellated, this is motivated in part by the types of problems being solved and also by the conveinient bookeeping allowed by object arrays.
+The <a class="reference internal" href="source_api/pixel.html#id1"><span class="std std-ref">pixel object</span></a> represents a single repeating unitcell in the geometry. One of it’s attributes is a pixel id that is mapped to a geometric
+definition in the MC solver. Within each pixel, the user can define one or more regions in which there will be one or more material(s) and corresponding
+set of optimization parameter(s).</p>
+<p>For example, a pixel of just one region with fuel and moderator materials optimized independently would correspond to that entire pixel being a homogenized mixture of fuel
+and moderator. The ratio of the two and the total density of the pixel are what ADAM would be optimizing.
+To continue with this example lets look at what the input for this system would be:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">self.region_definition   = {&#39;whole_pixel&#39;:[&#39;fuel&#39;,&#39;moderator&#39;]}</span>
+<span class="go">self.parameter_definition = {&#39;whole_pixel&#39;:[&#39;theta0&#39;,&#39;theta1&#39;]}</span>
+</pre></div>
+</div>
+<p>Bother the region_definition and parameter_definition are dictionaries of the same structure, and both are required.
+The dictionary keys correspond to the region within the pixel, the key itself is arbitrary as long as it is consistent.
+The value-pair for a given region is a list that tells what materials are present in that region and what optimization parameters you want to apply to each.</p>
+<p>As another example, if you wanted a pixel choose between a fuel or moderator, but if fuel then also a clad must be included, you could do something like this:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">self.region_definition   = {&#39;rod&#39;:[&#39;fuel&#39;,&#39;moderator&#39;], &#39;clad&#39;:[&#39;zircalloy&#39;,&#39;moderator&#39;]}</span>
+<span class="go">self.parameter_definition = {&#39;rod&#39;:[&#39;theta0&#39;,&#39;theta1&#39;], &#39;clad&#39;:[&#39;theta0&#39;,&#39;theta1&#39;]}</span>
+</pre></div>
+</div>
+<p>The material defintion is easily defined as a disctionary, but then converted to a dataframe within ADAM. The user defines a “base” set of materials
+with keys that correspond the the materials defined the the region_definition. The number densities in this “base” definition are multiplied by the
+transformed optimization parameters before being put into the MC solver. This means that once you have converged to a solution, the corresponding
+number denstiy of a given material in the system will be:
+base*trans(theta).</p>
+<p>An example of a material dictionary is:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">material_dict_base = {&#39;fuel&#39;:{</span>
+<span class="go">                                &#39;u-235&#39;:8.59435E-04,</span>
+<span class="go">                                &#39;u-238&#39;:2.23686E-02,</span>
+<span class="go">                                &#39;o-16&#39;:4.64708E-02},</span>
+
+<span class="go">                    &#39;zircalloy&#39;:{&#39;cr-52&#39;:6.98800E-05,</span>
+<span class="go">                                &#39;fe-56&#39;:1.42586E-04,</span>
+<span class="go">                                &#39;fe-58&#39;:4.38228E-07,</span>
+<span class="go">                                &#39;zr-94&#39;:7.37398E-03},</span>
+
+<span class="go">                    &#39;moderator&#39;:{</span>
+<span class="go">                                &#39;o-16&#39;:3.3368E-02,</span>
+<span class="go">                                &#39;h-1&#39;:6.6733E-02}</span>
+<span class="go">                                                    }</span>
+</pre></div>
+</div>
+<p>If using ADAM as-is with SCALE and the UTK NE cluster, the isotope keys must be in the shown format.</p>
+</section>
+<section id="objective-transformation-funtions">
+<h2>Objective &amp; Transformation Funtions<a class="headerlink" href="#objective-transformation-funtions" title="Permalink to this heading">¶</a></h2>
+<p><span class="math notranslate nohighlight">\(\\frac{ \\sum_{t=0}^{N}f(t,k) }{N}\)</span></p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Problem Definition</a><ul>
+<li><a class="reference internal" href="#adam-runtime-parameters">ADAM Runtime Parameters</a></li>
+<li><a class="reference internal" href="#geometry-material-definition">Geometry &amp; Material Definition</a></li>
+<li><a class="reference internal" href="#objective-transformation-funtions">Objective &amp; Transformation Funtions</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="usage.html"
+                          title="Previous page">&larr; How to Use The ADAM Project</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="source_api/index.html"
+                          title="Next page">&rarr; Source API</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/problem_definition.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="source_api/index.html" title="Source API"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="usage.html" title="How to Use The ADAM Project"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Problem Definition</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Walton.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

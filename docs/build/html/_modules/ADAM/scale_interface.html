@@ -1,0 +1,525 @@
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADAM.scale_interface &#8212; ADAM 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+
+    
+    
+     
+        <script src="../../_static/jquery.cookie.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ADAM.scale_interface</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for ADAM.scale_interface</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Tue Sep  6 08:55:17 2022</span>
+
+<span class="sd">@author: noahwalton</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+
+
+
+
+<div class="viewcode-block" id="read_keff"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.read_keff">[docs]</a><span class="k">def</span> <span class="nf">read_keff</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads a SCALE.out file to pull the k-eff and statistical uncertainty.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tsunami_file_string : string</span>
+<span class="sd">        Filename of the SCALE.out file to be read.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    keff : float</span>
+<span class="sd">        k-eigenvalue of the system.</span>
+<span class="sd">    unc : float</span>
+<span class="sd">        Statistical uncertainty in the k-eigenvalue.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;best estimate system k-eff&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">keff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+                <span class="n">unc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">keff</span><span class="p">,</span> <span class="n">unc</span></div>
+
+
+
+
+<div class="viewcode-block" id="read_total_sensitivity_by_nuclide"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.read_total_sensitivity_by_nuclide">[docs]</a><span class="k">def</span> <span class="nf">read_total_sensitivity_by_nuclide</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads out energy integrated total sensitivities for each nuclide in each material id region.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tsunami_file_string : string</span>
+<span class="sd">        Filenmae of the SCALE.out file to read.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data : nested dict</span>
+<span class="sd">        Nested dictionary where first set of keys are scale material id numbers, then second set of keys are nuclides.</span>
+<span class="sd">        For a given material/isotope key-set, 4 values are given as a tuple: (sensitivity, uncertainty, atom_density, absolute_sensitivity)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">did_not_find_keff</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">did_not_find_sensitivities</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">skiplines</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            
+            <span class="c1"># read out k-effective, occurs before sensitivities</span>
+            <span class="k">if</span> <span class="s2">&quot;best estimate system k-eff&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">keff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+                <span class="n">unc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+                <span class="n">did_not_find_keff</span> <span class="o">=</span> <span class="kc">False</span>
+                
+            <span class="c1"># read out sensitivities</span>
+            <span class="k">if</span> <span class="s2">&quot;Total Sensitivity Coefficients by Nuclide&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">in_data</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">did_not_find_sensitivities</span> <span class="o">=</span> <span class="kc">False</span>
+                
+                <span class="c1"># throw error if keff not found before trying to use the keff variable</span>
+                <span class="k">if</span> <span class="n">did_not_find_keff</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No k-eff found, it seems that KENO did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span> 
+
+                <span class="k">continue</span>
+            
+            <span class="k">if</span> <span class="n">in_data</span><span class="p">:</span>
+                <span class="n">skiplines</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+                <span class="k">if</span> <span class="n">skiplines</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+                    
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
+                        <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">continue</span>
+                    
+                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    
+                    <span class="n">mixture_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">isotope</span> <span class="o">=</span> <span class="n">splitline</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">atom_density</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">sensitivity</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+                    <span class="n">uncertainty</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+                    <span class="n">absolute_sensitivity</span> <span class="o">=</span> <span class="n">sensitivity</span><span class="o">*</span><span class="n">atom_density</span><span class="o">/</span><span class="n">keff</span>
+                    
+                    <span class="k">if</span> <span class="n">mixture_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                        <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">sensitivity</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">atom_density</span><span class="p">,</span> <span class="n">absolute_sensitivity</span><span class="p">)</span>
+        
+        <span class="c1"># throw error if keff or sensitivities were not found</span>
+        <span class="k">if</span> <span class="n">did_not_find_keff</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No k-eff found, it seems that KENO did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>   
+        <span class="k">if</span> <span class="n">did_not_find_sensitivities</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No sensitivities found, it seems that SAMS did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    
+
+    <span class="c1">### Now parse dictionary data from scale into pixels in pixel array</span>
+    <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
+        <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">region</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">region_definition</span><span class="p">):</span>
+            <span class="n">scale_material_id</span> <span class="o">=</span> <span class="n">each_pixel</span><span class="o">.</span><span class="n">pixel_id</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="n">i</span>
+            <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">scale_material_id</span><span class="p">]</span>
+                
+    <span class="k">return</span> <span class="n">keff</span></div>
+    
+
+
+<span class="c1"># =======================================================================================</span>
+
+<div class="viewcode-block" id="get_combined_derivatives"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.get_combined_derivatives">[docs]</a><span class="k">def</span> <span class="nf">get_combined_derivatives</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">,</span> <span class="n">material_dict_base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Combines nuclide derivatives for each region and then for each parameter within each pixel in the pixel array.</span>
+<span class="sd">    </span>
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    pixel.combine_derivatives_wrt_nuclides</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pixel_array : TYPE</span>
+<span class="sd">        DESCRIPTION.</span>
+<span class="sd">    material_dict_base : TYPE</span>
+<span class="sd">        DESCRIPTION.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DataFrame</span>
+<span class="sd">        DataFrame of sensitivities wrt optimization parameters.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">derivatives_wrt_parameters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
+        <span class="n">each_pixel</span><span class="o">.</span><span class="n">combine_derivatives_wrt_nuclides</span><span class="p">(</span><span class="n">material_dict_base</span><span class="p">)</span>
+        <span class="n">each_pixel</span><span class="o">.</span><span class="n">combine_region_derivatives</span><span class="p">()</span>
+        <span class="n">derivatives_wrt_parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">derivatives_wrt_parameters</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">derivatives_wrt_parameters</span><span class="p">)</span></div>
+    
+
+<div class="viewcode-block" id="create_tsunami_input"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.create_tsunami_input">[docs]</a><span class="k">def</span> <span class="nf">create_tsunami_input</span><span class="p">(</span><span class="n">template_file</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">hex_number</span><span class="p">,</span> <span class="n">generations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a tsunami input file from the template file with a random number seed, adds number of generations and removes read source input if on the first step.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template_file : string</span>
+<span class="sd">        Filename of template file.</span>
+<span class="sd">    input_file : string</span>
+<span class="sd">        Filename of input file to create.</span>
+<span class="sd">    steps : int</span>
+<span class="sd">        Step number in the gradient descent algorithm.</span>
+<span class="sd">    hex_number : float</span>
+<span class="sd">        Python generated random number seed.</span>
+<span class="sd">    generations : int</span>
+<span class="sd">        Monte Carlo generations to be run in each step.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">readlines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        
+        <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">readlines</span><span class="p">[</span><span class="mi">3</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;read start&#39;</span><span class="p">):</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;nst=9&#39;</span><span class="p">):</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;mss=fissionSource.msl&#39;</span><span class="p">):</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;end start&#39;</span><span class="p">):</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;nsk=1&#39;</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;nsk=10</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>                   
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;gen=&#39;</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;gen=</span><span class="si">{</span><span class="n">generations</span><span class="o">+</span><span class="mi">10</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>                    
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;rnd=&#39;</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;rnd=</span><span class="si">{</span><span class="n">hex_number</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>                    
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">readlines</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;rnd=&#39;</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;rnd=</span><span class="si">{</span><span class="n">hex_number</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>                  
+                <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;gen=&#39;</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;gen=</span><span class="si">{</span><span class="n">generations</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span></div>
+    
+
+<div class="viewcode-block" id="material_string"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.material_string">[docs]</a><span class="k">def</span> <span class="nf">material_string</span><span class="p">(</span><span class="n">pixel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the updated material string attribute for pixel object.</span>
+<span class="sd">        </span>
+<span class="sd">        This attribute is a string specific to the pixel object it belongs to corresponding to a SCALE material composition input.</span>
+<span class="sd">        The material id format is as follows, the first 4 digits represent the pixel, the last digit, or digit with magnitude 1e0, </span>
+<span class="sd">        represents the region within the pixel and will repeat within each pixel.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SCALE composition material string for the given pixel.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">material_string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pixel</span><span class="p">,</span> <span class="s1">&#39;updated_region_materials&#39;</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pixel does not have updated_region_materials attribute, please run &#39;apply_optimization_parameters_to_material_definitions&#39; before writing material string&quot;</span><span class="p">)</span>
+            
+        
+        <span class="c1"># loop through regions in the pixel</span>
+        <span class="n">region_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">region_key</span><span class="p">,</span> <span class="n">region_df</span> <span class="ow">in</span> <span class="n">pixel</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            
+            <span class="n">material_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&#39; </span><span class="si">{</span><span class="n">region_key</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">material_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">pixel</span><span class="o">.</span><span class="n">pixel_id</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span><span class="o">+</span><span class="n">region_id</span>
+            
+            <span class="n">region_df_remove_zeros</span> <span class="o">=</span> <span class="n">region_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">region_df</span><span class="o">.</span><span class="n">combined</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">isotope_key</span><span class="p">,</span> <span class="n">isotope_value</span> <span class="ow">in</span> <span class="n">region_df_remove_zeros</span><span class="o">.</span><span class="n">combined</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="n">material_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">isotope_key</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">material_id</span><span class="si">}</span><span class="s2"> 0 </span><span class="si">{</span><span class="n">isotope_value</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pixel</span><span class="o">.</span><span class="n">temp</span><span class="si">}</span><span class="s2"> end</span><span class="se">\n</span><span class="s2">&quot;</span>
+        
+        
+            <span class="n">region_id</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">region_id</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot have more than 10 material regions per pixel&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">material_string</span></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="c1">#%% Unused functions</span>
+
+
+
+<div class="viewcode-block" id="read_total_sensitivity_by_mixture"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.read_total_sensitivity_by_mixture">[docs]</a><span class="k">def</span> <span class="nf">read_total_sensitivity_by_mixture</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads a SCALE.out file and parses out the sensitivities by mixture.</span>
+<span class="sd">    </span>
+<span class="sd">    Because these sensitivities are coming directly from the SCALE.out file, they are relative, S = sig/k * dk/dsig</span>
+<span class="sd">    See the theory in the SCALE manual or research papers associated with this work.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tsunami_file_string : string</span>
+<span class="sd">        Filename of the SCALE.out file to be read.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DataFrame</span>
+<span class="sd">        DataFrame with columns mixture_id, sensitivity, and uncertainty. The sensitivity is relative, see theory. The uncertainty is </span>
+<span class="sd">        absolute with respect to the sensitivity and due to the statistical nature of the Monte Carlo problem.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">skiplines</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;Total Sensitivity Coefficients by Mixture&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">in_data</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">continue</span>
+            
+            <span class="k">if</span> <span class="n">in_data</span><span class="p">:</span>
+                <span class="n">skiplines</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+                <span class="k">if</span> <span class="n">skiplines</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+                    
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
+                        <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">continue</span>
+                    
+                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">mixture_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">sensitivity</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">uncertainty</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">mixture_id</span><span class="p">,</span> <span class="n">sensitivity</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">))</span>
+                    
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mixture_id&#39;</span><span class="p">,</span> <span class="s1">&#39;sensitivity&#39;</span><span class="p">,</span> <span class="s1">&#39;uncertainty&#39;</span><span class="p">])</span></div>
+    
+
+
+<span class="c1">### Tsunami File function section</span>
+<div class="viewcode-block" id="parse_sdf_file_into_dict"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.parse_sdf_file_into_dict">[docs]</a><span class="k">def</span> <span class="nf">parse_sdf_file_into_dict</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses the SDF file to get energy integrated sensitivities.</span>
+<span class="sd">    </span>
+<span class="sd">    This is a legacy function and will not work with the current ADAM implementation. The current implementation reads</span>
+<span class="sd">    energy integrated sensitivities from the .out file. The .sdf file contains energy binned sensitivity data as well as energy integrated.</span>
+<span class="sd">    This function was kept in case the user wishes to update the algorithm to read sensitivities from .sdf files rather than the output. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tsunami_file_string : TYPE</span>
+<span class="sd">        DESCRIPTION.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        DESCRIPTION.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data_dict : TYPE</span>
+<span class="sd">        DESCRIPTION.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SDF file parsing is a legacy function, needs to be updated for the current ADAM algorithm. See documentation.&quot;</span><span class="p">)</span>
+    
+    <span class="n">tsunami_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">data_dict</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">tsunami_file</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s2">&quot;0.000000E+00  0.000000E+00      0      0&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="s1">&#39;total&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">in_data</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+            <span class="n">line_split</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;total&#39;</span><span class="p">)</span>
+            <span class="n">isotope</span> <span class="o">=</span> <span class="n">line_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+            <span class="n">in_data_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">in_data</span><span class="p">:</span>
+            <span class="c1"># print(line.strip())</span>
+            <span class="k">if</span> <span class="n">in_data_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">line_split</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="n">material</span> <span class="o">=</span> <span class="n">line_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">in_data_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">line_split</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;  &#39;</span><span class="p">)</span>
+                <span class="n">sensitivity</span> <span class="o">=</span> <span class="n">line_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">uncert</span> <span class="o">=</span> <span class="n">line_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">in_data_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">in_data_count</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="c1"># print(material, isotope, sensitivity, uncert)</span>
+                <span class="k">if</span> <span class="n">material</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">:</span>
+                    <span class="n">data_dict</span><span class="p">[</span><span class="n">material</span><span class="p">]</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+                <span class="n">data_dict</span><span class="p">[</span><span class="n">material</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+                <span class="n">data_dict</span><span class="p">[</span><span class="n">material</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="s1">&#39;sensitivity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sensitivity</span>
+                <span class="n">data_dict</span><span class="p">[</span><span class="n">material</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="s1">&#39;uncertainty&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uncert</span>
+    <span class="k">return</span> <span class="n">data_dict</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ADAM.scale_interface</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Walton.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

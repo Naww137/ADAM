@@ -1,0 +1,269 @@
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Pixel &#8212; ADAM 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    
+    
+     
+        <script src="../_static/jquery.cookie.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SCALE Interface" href="scale_interface.html" />
+    <link rel="prev" title="Derivatives" href="derivatives.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="scale_interface.html" title="SCALE Interface"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="derivatives.html" title="Derivatives"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Source API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Pixel</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="pixel">
+<h1>Pixel<a class="headerlink" href="#pixel" title="Permalink to this heading">¶</a></h1>
+<p id="id1">The pixel object is used to define the geometry of the system being optimized. There are two major motivations for setting up the geometry input in this manner:</p>
+<ol class="arabic simple">
+<li><p>Traditional and some advanced nuclear system designs often leverage repeating lattice structures</p></li>
+</ol>
+<p>2) The most inspiring goal for this optimization work is to optimize the shape of fuel for fuel performance.
+The methodology for which requires the pixelation of geometric space such that the algorithm can step towards a continuous shape in the limit of infinitesimal pixel size.</p>
+<p>The pixel object houses information about the materials/regions within the repeating unit.
+A number of methods are also included that perform functions such as applying the update of materials given some set of transformed optimization parameters.
+This object-oriented structure also helps with bookeeping whenever the number of pixels, and therefore optimization parameters, becomes very large.</p>
+<span class="target" id="module-ADAM.pixel"></span><dl class="py class">
+<dt class="sig sig-object py" id="ADAM.pixel.pixel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ADAM.pixel.</span></span><span class="sig-name descname"><span class="pre">pixel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region_definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter_definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material_df_base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/pixel.html#pixel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.pixel.pixel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary of pixel class.</p>
+<p>More on pixel class.</p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">apply_optimization_parameters_to_material_definitions:</span></span></dt>
+<dd><p>Applies the optimization parameters to the base material values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">write_material_string:</span></span></dt>
+<dd><p>Creates the updated material string attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">combine_derivatives_wrt_nuclides:</span></span></dt>
+<dd><p>Combine derivatives for each nuclide in a material.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">combine_region_derivatives:</span></span></dt>
+<dd><p>Combines derivatives for each region with a given optimization parameter.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ADAM.pixel.pixel.apply_density_factors" title="ADAM.pixel.pixel.apply_density_factors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_density_factors</span></code></a>(density_factors)</p></td>
+<td><p>Generates updated isotopic concentration values for each region within a pixel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ADAM.pixel.pixel.combine_derivatives_wrt_nuclides" title="ADAM.pixel.pixel.combine_derivatives_wrt_nuclides"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_derivatives_wrt_nuclides</span></code></a>(...)</p></td>
+<td><p>Combines absolute sensitivities/derivatives with respect to each nuclide within each region of the pixel object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ADAM.pixel.pixel.combine_region_derivatives" title="ADAM.pixel.pixel.combine_region_derivatives"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_region_derivatives</span></code></a>()</p></td>
+<td><p>Combines the derivatives across regions for the same parameters given the function for bomining derivatives in the objective_function_definition module.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="ADAM.pixel.pixel.apply_density_factors">
+<span class="sig-name descname"><span class="pre">apply_density_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">density_factors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/pixel.html#pixel.apply_density_factors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.pixel.pixel.apply_density_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates updated isotopic concentration values for each region within a pixel.</p>
+<p>The updated_materials_definition attribute for the pixel object is created. This dataframe is created by multiplying the density
+factors (transformed optimization parameters) to the base isotopic concentrations (material_df_base).</p>
+<div class="math notranslate nohighlight">
+\[N_{updated} = N_{base}*T(\theta)\]</div>
+<p>Where T is the user defined transformation function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>density_factors</strong> (<em>DataFrame</em>) – Transformed optimization parameters, aka density factors.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ADAM.pixel.pixel.combine_derivatives_wrt_nuclides">
+<span class="sig-name descname"><span class="pre">combine_derivatives_wrt_nuclides</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">material_dict_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/pixel.html#pixel.combine_derivatives_wrt_nuclides"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.pixel.pixel.combine_derivatives_wrt_nuclides" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combines absolute sensitivities/derivatives with respect to each nuclide within each region of the pixel object.</p>
+<p>This function goes into the</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>material_dict_base</strong> (<em>TYPE</em>) – DESCRIPTION.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ADAM.pixel.pixel.combine_region_derivatives">
+<span class="sig-name descname"><span class="pre">combine_region_derivatives</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/pixel.html#pixel.combine_region_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.pixel.pixel.combine_region_derivatives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combines the derivatives across regions for the same parameters given the function for bomining derivatives in the objective_function_definition module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="derivatives.html"
+                          title="Previous page">&larr; Derivatives</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="scale_interface.html"
+                          title="Next page">&rarr; SCALE Interface</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source_api/pixel.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="scale_interface.html" title="SCALE Interface"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="derivatives.html" title="Derivatives"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" >Source API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Pixel</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Walton.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,265 @@
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADAM.pixel &#8212; ADAM 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+
+    
+    
+     
+        <script src="../../_static/jquery.cookie.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ADAM.pixel</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for ADAM.pixel</h1><div class="highlight"><pre>
+<span></span>
+
+<span class="kn">from</span> <span class="nn">ADAM</span> <span class="kn">import</span> <span class="n">derivatives</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+
+<div class="viewcode-block" id="pixel"><a class="viewcode-back" href="../../source_api/pixel.html#ADAM.pixel.pixel">[docs]</a><span class="k">class</span> <span class="nc">pixel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Summary of pixel class.</span>
+
+<span class="sd">    More on pixel class.</span>
+
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    apply_optimization_parameters_to_material_definitions: </span>
+<span class="sd">        Applies the optimization parameters to the base material values.</span>
+<span class="sd">    write_material_string:</span>
+<span class="sd">        Creates the updated material string attribute.</span>
+<span class="sd">    combine_derivatives_wrt_nuclides:</span>
+<span class="sd">        Combine derivatives for each nuclide in a material.</span>
+<span class="sd">    combine_region_derivatives:</span>
+<span class="sd">        Combines derivatives for each region with a given optimization parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_definition</span><span class="p">,</span> <span class="n">parameter_definition</span><span class="p">,</span> <span class="n">material_df_base</span><span class="p">,</span> <span class="n">pixel_id</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span> <span class="o">=</span> <span class="n">region_definition</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameter_definition</span> <span class="o">=</span> <span class="n">parameter_definition</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">material_df_base</span> <span class="o">=</span> <span class="n">material_df_base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_id</span> <span class="o">=</span> <span class="n">pixel_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="n">temperature</span>
+        
+        <span class="c1"># to replace material key with parameter key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par_def</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">region_definition</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">region_definition</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">])):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">par_def</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region_definition</span><span class="p">[</span><span class="n">region</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameter_definition</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                
+                
+        
+<div class="viewcode-block" id="pixel.apply_density_factors"><a class="viewcode-back" href="../../source_api/pixel.html#ADAM.pixel.pixel.apply_density_factors">[docs]</a>    <span class="k">def</span> <span class="nf">apply_density_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">density_factors</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates updated isotopic concentration values for each region within a pixel.</span>
+<span class="sd">        </span>
+<span class="sd">        The updated_materials_definition attribute for the pixel object is created. This dataframe is created by multiplying the density </span>
+<span class="sd">        factors (transformed optimization parameters) to the base isotopic concentrations (material_df_base).</span>
+<span class="sd">        </span>
+<span class="sd">        .. math:: </span>
+<span class="sd">            N_{updated} = N_{base}*T(\\theta)</span>
+
+<span class="sd">        Where T is the user defined transformation function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        density_factors : DataFrame</span>
+<span class="sd">            Transformed optimization parameters, aka density factors.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># create the updated region materials dataframe and replace column material keys with the parameter key to be applied</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updated_region_materials</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">material_df_base</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">par_def</span><span class="p">)</span>
+
+        <span class="c1"># apply multiplier</span>
+        <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">material</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">material</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">material</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">density_factors</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">material</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            
+        <span class="c1"># combine like isotopes </span>
+        <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">][</span><span class="s1">&#39;combined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+    
+
+                
+    
+<div class="viewcode-block" id="pixel.combine_derivatives_wrt_nuclides"><a class="viewcode-back" href="../../source_api/pixel.html#ADAM.pixel.pixel.combine_derivatives_wrt_nuclides">[docs]</a>    <span class="k">def</span> <span class="nf">combine_derivatives_wrt_nuclides</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material_dict_base</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Combines absolute sensitivities/derivatives with respect to each nuclide within each region of the pixel object.</span>
+<span class="sd">        </span>
+<span class="sd">        This function goes into the </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        material_dict_base : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;sensitivity_data_by_nuclide&#39;</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pixel does not have sensitivity_data_by_nuclide attribute, please run &#39;pixel_array_functions.get_nuclide_sensitivites_for_each_pixel&#39; before attempting to combine derivatives&quot;</span><span class="p">)</span>
+        
+        
+        <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="p">:</span>
+            <span class="n">temporary_dictionary</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">material</span><span class="p">,</span> <span class="n">optimization_parameter</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_definition</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]):</span>
+                
+                <span class="n">absolute_sensitivity_by_parameter</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">isotope</span> <span class="ow">in</span> <span class="n">material_dict_base</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">material</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">absolute_sensitivity_by_parameter</span><span class="p">[</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span><span class="p">[</span><span class="n">region</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+                
+                <span class="k">if</span> <span class="n">optimization_parameter</span> <span class="ow">in</span> <span class="n">temporary_dictionary</span><span class="p">:</span>
+                    <span class="n">temporary_dictionary</span><span class="p">[</span><span class="n">optimization_parameter</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">derivatives</span><span class="o">.</span><span class="n">combine_nuclide_derivatives</span><span class="p">(</span><span class="n">absolute_sensitivity_by_parameter</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">temporary_dictionary</span><span class="p">[</span><span class="n">optimization_parameter</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">derivatives</span><span class="o">.</span><span class="n">combine_nuclide_derivatives</span><span class="p">(</span><span class="n">absolute_sensitivity_by_parameter</span><span class="p">)]</span>
+                
+        <span class="bp">self</span><span class="o">.</span><span class="n">derivatives_wrt_parameters_per_region</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">temporary_dictionary</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span></div>
+    
+    
+    
+<div class="viewcode-block" id="pixel.combine_region_derivatives"><a class="viewcode-back" href="../../source_api/pixel.html#ADAM.pixel.pixel.combine_region_derivatives">[docs]</a>    <span class="k">def</span> <span class="nf">combine_region_derivatives</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Combines the derivatives across regions for the same parameters given the function for bomining derivatives in the objective_function_definition module.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">derivatives_wrt_parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivatives_wrt_parameters_per_region</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">derivatives</span><span class="o">.</span><span class="n">combine_region_derivatives</span><span class="p">)</span></div></div>
+    
+    
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ADAM.pixel</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Walton.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

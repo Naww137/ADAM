@@ -1,0 +1,204 @@
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Derivatives &#8212; ADAM 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+
+    
+    
+     
+        <script src="../_static/jquery.cookie.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Pixel" href="pixel.html" />
+    <link rel="prev" title="ADAM Control Module" href="ADAM_control_module.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="pixel.html" title="Pixel"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="ADAM_control_module.html" title="ADAM Control Module"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Source API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Derivatives</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="derivatives">
+<h1>Derivatives<a class="headerlink" href="#derivatives" title="Permalink to this heading">¶</a></h1>
+<p>This module houses functions used to convert the derivatives with respect to nuclides and or specific regions to derivatives with respect to the optimization parameters.
+Often the output of a given MC Transport/sensitivity calculation is the derivative of some figure of merit to the macroscopic cross section of each isotope in the problem.
+Macroscopic cross secitons are proportional to the number density of that isotope by a factor equivalent to the unchanging microscopic cross seciton.
+.. math:: deltak_{eff}/deltaN_{i}*sigma
+Where i is specific to a given isotope in the problem. What we can reasonable control in a system is the density of some material or compound, which is a function of the
+densities of each constituent isotope. This require a chain rule for derivatives, i.e.,
+.. math:: deltak_{eff}/deltarho = sum(deltak_{eff}/deltaN_i * deltaN_i/deltarho)
+Furthermore, the ADAM solver is generally not setup to optimized directly over the density parameter $rho$, rather, some transformation funciton is applied to contrain
+the domain of this parameter without constraining the algorithm itself. This transformation function and the execution of its chain rule is actually housed in the
+:doc:’Problem Definition’ object since it is thought of as a problem constraint.
+test link is :ref:<a href="#id1"><span class="problematic" id="id2">`</span></a>ADAM Control Module &lt;ADAM_control_module&gt;’</p>
+<span class="target" id="module-ADAM.derivatives"></span><p>Created on Mon Sep  5 10:59:10 2022</p>
+<p>&#64;author: noahwalton</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.derivatives.combine_nuclide_derivatives">
+<span class="sig-prename descclassname"><span class="pre">ADAM.derivatives.</span></span><span class="sig-name descname"><span class="pre">combine_nuclide_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nuclide_derivatives</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/derivatives.html#combine_nuclide_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.derivatives.combine_nuclide_derivatives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function used to combine derivatives from individual nuclides into a derivative wrt the material.</p>
+<p>Because ADAM wants the derivative with respect to the number density of a given material, and that is a function
+of individual isotopes’ number density, the chain rule for derivatives must be used. In this case, it is a simple
+sum over all nuclide derivatives because the total atom density for a material is just a sum of all constituent atom densities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nuclide_derivatives</strong> (<em>dictionary</em>) – This is a dictionary with keys corresponding to nuclides and values corresponding to the absolute sensitivity/derivative
+of k-effective with respect to the keyed nuclide.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>combined_derivatives</strong> – Combined derivative with respect to the material composed of the individual nuclides.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.derivatives.combine_region_derivatives">
+<span class="sig-prename descclassname"><span class="pre">ADAM.derivatives.</span></span><span class="sig-name descname"><span class="pre">combine_region_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region_derivatives</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/derivatives.html#combine_region_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.derivatives.combine_region_derivatives" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="ADAM_control_module.html"
+                          title="Previous page">&larr; ADAM Control Module</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="pixel.html"
+                          title="Next page">&rarr; Pixel</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source_api/derivatives.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="pixel.html" title="Pixel"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="ADAM_control_module.html" title="ADAM Control Module"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" >Source API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Derivatives</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Walton.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

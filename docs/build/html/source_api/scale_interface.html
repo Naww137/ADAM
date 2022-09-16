@@ -1,0 +1,309 @@
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>SCALE Interface &#8212; ADAM 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+
+    
+    
+     
+        <script src="../_static/jquery.cookie.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cluster Interface" href="cluster_interface.html" />
+    <link rel="prev" title="Pixel" href="pixel.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="cluster_interface.html" title="Cluster Interface"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="pixel.html" title="Pixel"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Source API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">SCALE Interface</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="scale-interface">
+<h1>SCALE Interface<a class="headerlink" href="#scale-interface" title="Permalink to this heading">¶</a></h1>
+<p id="id1">This module contains funcions specific to the the ‘SCALE &lt;<a class="reference external" href="https://www.ornl.gov/scale">https://www.ornl.gov/scale</a>&gt;_’ simulation suite.
+If running the Monte Carlo transport for each step with a different simulation suite, this module should be altered/replaced.</p>
+<span class="target" id="module-ADAM.scale_interface"></span><p>Created on Tue Sep  6 08:55:17 2022</p>
+<p>&#64;author: noahwalton</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.create_tsunami_input">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">create_tsunami_input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hex_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#create_tsunami_input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.create_tsunami_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a tsunami input file from the template file with a random number seed, adds number of generations and removes read source input if on the first step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template_file</strong> (<em>string</em>) – Filename of template file.</p></li>
+<li><p><strong>input_file</strong> (<em>string</em>) – Filename of input file to create.</p></li>
+<li><p><strong>steps</strong> (<em>int</em>) – Step number in the gradient descent algorithm.</p></li>
+<li><p><strong>hex_number</strong> (<em>float</em>) – Python generated random number seed.</p></li>
+<li><p><strong>generations</strong> (<em>int</em>) – Monte Carlo generations to be run in each step.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.get_combined_derivatives">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">get_combined_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixel_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material_dict_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#get_combined_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.get_combined_derivatives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combines nuclide derivatives for each region and then for each parameter within each pixel in the pixel array.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pixel.combine_derivatives_wrt_nuclides</span></code></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pixel_array</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+<li><p><strong>material_dict_base</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame of sensitivities wrt optimization parameters.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.material_string">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">material_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#material_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.material_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the updated material string attribute for pixel object.</p>
+<p>This attribute is a string specific to the pixel object it belongs to corresponding to a SCALE material composition input.
+The material id format is as follows, the first 4 digits represent the pixel, the last digit, or digit with magnitude 1e0,
+represents the region within the pixel and will repeat within each pixel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – DESCRIPTION.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>SCALE composition material string for the given pixel.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.parse_sdf_file_into_dict">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">parse_sdf_file_into_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsunami_file_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#parse_sdf_file_into_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.parse_sdf_file_into_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the SDF file to get energy integrated sensitivities.</p>
+<p>This is a legacy function and will not work with the current ADAM implementation. The current implementation reads
+energy integrated sensitivities from the .out file. The .sdf file contains energy binned sensitivity data as well as energy integrated.
+This function was kept in case the user wishes to update the algorithm to read sensitivities from .sdf files rather than the output.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tsunami_file_string</strong> (<em>TYPE</em>) – DESCRIPTION.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – DESCRIPTION.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>data_dict</strong> – DESCRIPTION.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>TYPE</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.read_keff">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">read_keff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsunami_file_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#read_keff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.read_keff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a SCALE.out file to pull the k-eff and statistical uncertainty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tsunami_file_string</strong> (<em>string</em>) – Filename of the SCALE.out file to be read.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>keff</strong> (<em>float</em>) – k-eigenvalue of the system.</p></li>
+<li><p><strong>unc</strong> (<em>float</em>) – Statistical uncertainty in the k-eigenvalue.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.read_total_sensitivity_by_mixture">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">read_total_sensitivity_by_mixture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsunami_file_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#read_total_sensitivity_by_mixture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.read_total_sensitivity_by_mixture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a SCALE.out file and parses out the sensitivities by mixture.</p>
+<p>Because these sensitivities are coming directly from the SCALE.out file, they are relative, S = sig/k * dk/dsig
+See the theory in the SCALE manual or research papers associated with this work.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tsunami_file_string</strong> (<em>string</em>) – Filename of the SCALE.out file to be read.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame with columns mixture_id, sensitivity, and uncertainty. The sensitivity is relative, see theory. The uncertainty is
+absolute with respect to the sensitivity and due to the statistical nature of the Monte Carlo problem.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.read_total_sensitivity_by_nuclide">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">read_total_sensitivity_by_nuclide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsunami_file_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#read_total_sensitivity_by_nuclide"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.read_total_sensitivity_by_nuclide" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads out energy integrated total sensitivities for each nuclide in each material id region.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tsunami_file_string</strong> (<em>string</em>) – Filenmae of the SCALE.out file to read.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>data</strong> – Nested dictionary where first set of keys are scale material id numbers, then second set of keys are nuclides.
+For a given material/isotope key-set, 4 values are given as a tuple: (sensitivity, uncertainty, atom_density, absolute_sensitivity)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nested dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="pixel.html"
+                          title="Previous page">&larr; Pixel</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="cluster_interface.html"
+                          title="Next page">&rarr; Cluster Interface</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source_api/scale_interface.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="cluster_interface.html" title="Cluster Interface"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="pixel.html" title="Pixel"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+
+          <li class="nav-item nav-item-1"><a href="index.html" >Source API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">SCALE Interface</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Walton.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>
