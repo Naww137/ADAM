@@ -14,9 +14,9 @@ pixel_array = []
 for i in range(pdef.number_of_pixels):
     pixel_array.append(pixel.pixel(pdef.region_definition, pdef.parameter_definition, pdef.material_df_base, i+1, pdef.temperature))
 
-step = 2
+step = 1
 ### Run ADAM 
-while step < 5:
+while step < 10:
 
     # create a step
     ADAM_control_module.update(step, pixel_array, pdef)

@@ -30,8 +30,8 @@ class Problem_Definition:
         self.write_output = True
         self.build_input = True
         # self.template_file = 'spent_fuel_cask_template.inp'
-        # self.template_file = 'tsunami_template_file_10x10.inp'
-        self.template_file = 'tsunami_template_file_44x44.inp'
+        self.template_file = 'tsunami_template_file_10x10.inp'
+        # self.template_file = 'tsunami_template_file_44x44.inp'
         self.generations = 10
         self.temperature = 300
 
@@ -49,7 +49,7 @@ class Problem_Definition:
 
             parameter_df = pd.DataFrame()
             for i in range(self.max_parameters):
-                parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])
+                parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*10
                 parameter_df[f'mt{i}'] = np.zeros([self.number_of_pixels])
                 parameter_df[f'vt{i}'] = np.zeros([self.number_of_pixels])
         else:
@@ -59,8 +59,9 @@ class Problem_Definition:
 
     def Geometry(self):
             
-        self.number_of_pixels = 1936
+        # self.number_of_pixels = 1936
         # self.number_of_pixels = 289
+        self.number_of_pixels = 100
 
         ### Define geometric regions (repeating regions in this case) and the materials present within each
         # self.region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
@@ -77,33 +78,33 @@ class Problem_Definition:
                                         'u-238':2.23686E-02,
                                         'o-16':4.64708E-02},
                         
-                            'zircalloy':{'cr-52':6.98800E-05,
+                            # 'zircalloy':{'cr-52':6.98800E-05,
+                            #             'fe-56':1.42586E-04,
+                            #             'fe-58':4.38228E-07,
+                            #             'zr-94':7.37398E-03},
+                                'zircalloy':{'cr-50':3.62373E-06,
+                                        'cr-52':6.98800E-05,
+                                        'cr-53':7.92383E-06,
+                                        'cr-54':1.97241E-06,
+                                        'fe-54':9.08312E-06,
                                         'fe-56':1.42586E-04,
+                                        'fe-57':3.29292E-06,
                                         'fe-58':4.38228E-07,
-                                        'zr-94':7.37398E-03},
-                                # 'zircalloy':{'cr-50':3.62373E-06,
-                                #         'cr-52':6.98800E-05,
-                                #         'cr-53':7.92383E-06,
-                                #         'cr-54':1.97241E-06,
-                                #         'fe-54':9.08312E-06,
-                                #         'fe-56':1.42586E-04,
-                                #         'fe-57':3.29292E-06,
-                                #         'fe-58':4.38228E-07,
-                                #         'zr-90':2.18292E-02,
-                                #         'zr-91':4.76042E-03,
-                                #         'zr-92':7.27640E-03,
-                                #         'zr-94':7.37398E-03,
-                                #         'zr-96':1.18798E-03,
-                                #         'sn-112':4.64145E-06,
-                                #         'sn-114':3.15810E-06,
-                                #         'sn-115':1.62690E-06,
-                                #         'sn-116':6.95739E-05,
-                                #         'sn-117':3.67488E-05,
-                                #         'sn-118':1.15893E-04,
-                                #         'sn-119':4.11031E-05,
-                                #         'sn-120':1.55895E-04,
-                                #         'sn-122':2.21545E-05,
-                                #         'sn-124':2.77051E-05},
+                                        'zr-90':2.18292E-02,
+                                        'zr-91':4.76042E-03,
+                                        'zr-92':7.27640E-03,
+                                        'zr-94':7.37398E-03,
+                                        'zr-96':1.18798E-03,
+                                        'sn-112':4.64145E-06,
+                                        'sn-114':3.15810E-06,
+                                        'sn-115':1.62690E-06,
+                                        'sn-116':6.95739E-05,
+                                        'sn-117':3.67488E-05,
+                                        'sn-118':1.15893E-04,
+                                        'sn-119':4.11031E-05,
+                                        'sn-120':1.55895E-04,
+                                        'sn-122':2.21545E-05,
+                                        'sn-124':2.77051E-05},
                             
                                 'moderator':{
                                             'o-16':3.3368E-02,
