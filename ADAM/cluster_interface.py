@@ -96,7 +96,7 @@ def wait_on_submitted_job(file_name_flag):
 
 def remove_unwanted_files():
     # os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *.html *.htmd *.sh* *.sdf *.txt *.3dmap')
-    os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *.sh.*')
+    os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *.sh.*"')
 
 
 
