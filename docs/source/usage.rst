@@ -8,6 +8,10 @@ To use **ADAM**, clone this github repository then install it in development mod
 
 :code:`git clone https://github.com/Naww137/ADAM TARGETDIR`
 
+:code:`pip install TARGETDIR`
+
+If you would like to run in `development mode<https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_, install using:
+
 :code:`pip install -e TARGETDIR`
 
 It is reccomended to install this package within a virtual environment.

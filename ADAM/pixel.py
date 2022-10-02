@@ -107,10 +107,15 @@ class pixel:
             temporary_dictionary = {}
             for material, optimization_parameter in zip(self.region_definition[f'{region}'], self.parameter_definition[f'{region}']):
                 
+                # material_derivative = 0
                 absolute_sensitivity_by_parameter = {}
                 for isotope in material_dict_base[f'{material}'].keys():
-                    absolute_sensitivity_by_parameter[isotope] = self.sensitivity_data_by_nuclide[region][isotope][3]
-                
+                    absolute_sensitivity_by_parameter[isotope] = self.sensitivity_data_by_nuclide[region][isotope][3] # 3rd unit is absolute derivative
+                    # material_derivative += self.sensitivity_data_by_nuclide[region][isotope][3] # 3rd unit is absolute derivative
+
+                # create a dictionary of material derivatives (combined from isotope) for each region
+                # combine nuclide derivatives function calls chain rule to get dk/dNmat
+                #       - this case is a simple sum WRT dk/dNisotope, but I wanted to provide the option to get fancy
                 if optimization_parameter in temporary_dictionary:
                     temporary_dictionary[optimization_parameter].append(derivatives.combine_nuclide_derivatives(absolute_sensitivity_by_parameter))
                 else:
@@ -129,6 +134,8 @@ class pixel:
         None.
 
         """
+        # apply a function to the dataframe to combine the derivatives in each reagion wrt material to a single derivative wrt the optimization parameter
+        #       - again in this case it is just a simple sum, but I wanted to provide the option to get fancy
         self.derivatives_wrt_parameters = self.derivatives_wrt_parameters_per_region.apply(derivatives.combine_region_derivatives)
     
     
