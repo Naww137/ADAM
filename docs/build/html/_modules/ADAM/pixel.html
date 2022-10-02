@@ -173,10 +173,15 @@
             <span class="n">temporary_dictionary</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">material</span><span class="p">,</span> <span class="n">optimization_parameter</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region_definition</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter_definition</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]):</span>
                 
+                <span class="c1"># material_derivative = 0</span>
                 <span class="n">absolute_sensitivity_by_parameter</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="k">for</span> <span class="n">isotope</span> <span class="ow">in</span> <span class="n">material_dict_base</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">material</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">absolute_sensitivity_by_parameter</span><span class="p">[</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span><span class="p">[</span><span class="n">region</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
-                
+                    <span class="n">absolute_sensitivity_by_parameter</span><span class="p">[</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span><span class="p">[</span><span class="n">region</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="c1"># 3rd unit is absolute derivative</span>
+                    <span class="c1"># material_derivative += self.sensitivity_data_by_nuclide[region][isotope][3] # 3rd unit is absolute derivative</span>
+
+                <span class="c1"># create a dictionary of material derivatives (combined from isotope) for each region</span>
+                <span class="c1"># combine nuclide derivatives function calls chain rule to get dk/dNmat</span>
+                <span class="c1">#       - this case is a simple sum WRT dk/dNisotope, but I wanted to provide the option to get fancy</span>
                 <span class="k">if</span> <span class="n">optimization_parameter</span> <span class="ow">in</span> <span class="n">temporary_dictionary</span><span class="p">:</span>
                     <span class="n">temporary_dictionary</span><span class="p">[</span><span class="n">optimization_parameter</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">derivatives</span><span class="o">.</span><span class="n">combine_nuclide_derivatives</span><span class="p">(</span><span class="n">absolute_sensitivity_by_parameter</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -195,6 +200,8 @@
 <span class="sd">        None.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># apply a function to the dataframe to combine the derivatives in each reagion wrt material to a single derivative wrt the optimization parameter</span>
+        <span class="c1">#       - again in this case it is just a simple sum, but I wanted to provide the option to get fancy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">derivatives_wrt_parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivatives_wrt_parameters_per_region</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">derivatives</span><span class="o">.</span><span class="n">combine_region_derivatives</span><span class="p">)</span></div></div>
     
     

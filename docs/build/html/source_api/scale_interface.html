@@ -203,7 +203,35 @@ absolute with respect to the sensitivity and due to the statistical nature of th
 <dl class="py function">
 <dt class="sig sig-object py" id="ADAM.scale_interface.read_total_sensitivity_by_nuclide">
 <span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">read_total_sensitivity_by_nuclide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsunami_file_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#read_total_sensitivity_by_nuclide"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.read_total_sensitivity_by_nuclide" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads out energy integrated total sensitivities for each nuclide for each material id.</p>
+<p>This function reads sensitivity data from the SDF, but needs to read the output file as well in order to get atom densities.
+A more simple implementation is to also read sensitivities from the output file, but a weird bug in TSUNAMI causes these not to always be written
+correctly. See the old function “read_total_sensitivity_by_nuclide_OUTPUTFILEONLY” in this scale_interface module for the more simple implemntation.
+Perhaps the TSUNAMI bug will be fixed in the future.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tsunami_file_string</strong> (<em>string</em>) – Basename of the of the SCALE outfiles file to read.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>data</strong> – Nested dictionary where first set of keys are scale material id numbers, then second set of keys are nuclides.
+For a given material/isotope key-set, 4 values are given as a tuple: (sensitivity, uncertainty, atom_density, absolute_sensitivity)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nested dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ADAM.scale_interface.read_total_sensitivity_by_nuclide_OUTPUTFILEONLY">
+<span class="sig-prename descclassname"><span class="pre">ADAM.scale_interface.</span></span><span class="sig-name descname"><span class="pre">read_total_sensitivity_by_nuclide_OUTPUTFILEONLY</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsunami_file_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/scale_interface.html#read_total_sensitivity_by_nuclide_OUTPUTFILEONLY"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.scale_interface.read_total_sensitivity_by_nuclide_OUTPUTFILEONLY" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads out energy integrated total sensitivities for each nuclide in each material id region.</p>
+<p>This function is no longer used because of a weird bug in TSUNAMI where every now and then a random material sensitivity won’t write to the
+Total Sensitivity Coefficients by Nuclide  table in the output file.</p>
+<p>The updated function in this module that is actually used in ADAM reads sensitivites from the SDF file then atom densities from the output file.
+This, however, is a more complicated procedure. The weird bug in TSUNAMI, was noticed to only occur when a material id’s
+sensitivites are all zero! This is evident of a deeper bug, hoever, if this more simple function for reading sensitivities from the output file is desired,
+include some logic that sets sensitivities to zero for all isotopes in a given material ID if that ID id not found in the output file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>tsunami_file_string</strong> (<em>string</em>) – Filenmae of the SCALE.out file to read.</p>

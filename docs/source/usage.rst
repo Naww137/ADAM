@@ -12,7 +12,7 @@ If a new version of ADAM has been release, you can update ADAM by running:
 
 :code:`pip install --upgrade git+https://github.com/Naww137/ADAM`
 
-If you would like to run in `development mode<https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_, install using:
+If you would like to run in `development mode <https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_, install using:
 
 :code:`pip install -e`
 

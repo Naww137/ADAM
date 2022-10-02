@@ -4,13 +4,17 @@ How to Use The ADAM Project
 Installation
 ------------
 
-To use **ADAM**, clone this github repository then install it in development mode using pip:
+To use **ADAM**, you can install install it using pip:
 
-:code:`git clone https://github.com/Naww137/ADAM TARGETDIR`
+:code:`pip install git+https://github.com/Naww137/ADAM`
 
-:code:`pip install -e TARGETDIR`
+If a new version of ADAM has been release, you can update ADAM by running:
 
-It is reccomended to install this package within a virtual environment.
+:code:`pip install --upgrade git+https://github.com/Naww137/ADAM`
+
+If you would like to run in `development mode <https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_, install using:
+
+:code:`pip install -e`
 
 This project comes with significant documentation. In order to devlop and compile this documentation with `sphinx <https://www.sphinx-doc.org/en/master/>`_
 follow the next few steps. If you are only a user, all of the ADAM documentation is hosted on this site.

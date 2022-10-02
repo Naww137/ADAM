@@ -181,10 +181,11 @@
 
         <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">write_output</span><span class="p">:</span>
 
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">):</span>
-                <span class="k">pass</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">)</span>
+            <span class="c1"># if os.path.isdir(&#39;parameter_data&#39;):</span>
+            <span class="c1">#     os.rmdir(&#39;parameter_data&#39;)</span>
+            <span class="c1">#     os.mkdir(&#39;parameter_data&#39;)</span>
+            <span class="c1"># else:</span>
+            <span class="c1">#     os.mkdir(&#39;parameter_data&#39;)</span>
 
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;parameter_data/output.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file</span><span class="p">:</span>
                 <span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;step, keff</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -201,7 +202,7 @@
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">):</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">raiseValueError</span><span class="p">(</span><span class="s2">&quot;Starting from step&gt;1 but no parameter_data is present. Cannot find directory parameter_data/&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Starting from step&gt;1 but no parameter_data is present. Cannot find directory parameter_data/&quot;</span><span class="p">)</span>
 
         <span class="c1">### Read parameters from previous step</span>
         <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">)</span>
@@ -209,15 +210,15 @@
 
 
         <span class="c1">### Pull out keff and sensitivities from previous job</span>
-        <span class="n">output_file</span> <span class="o">=</span> <span class="s1">&#39;tsunami_job.out&#39;</span>
+        <span class="n">solver_file_basename</span> <span class="o">=</span> <span class="s1">&#39;tsunami_job&#39;</span>
         <span class="c1">#!!! if file does not exist throw error</span>
 
         <span class="c1"># outputs keff and writes derivative dfs to each respective pixel</span>
         <span class="c1"># derivatives are absolute but wrt to each nuclide within each region</span>
-        <span class="n">keff</span> <span class="o">=</span> <span class="n">scale_interface</span><span class="o">.</span><span class="n">read_total_sensitivity_by_nuclide</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">)</span>
+        <span class="n">keff</span> <span class="o">=</span> <span class="n">scale_interface</span><span class="o">.</span><span class="n">read_total_sensitivity_by_nuclide</span><span class="p">(</span><span class="s2">&quot;tsunami_job&quot;</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">)</span>
 
 
-        <span class="c1"># combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors (chain rule)</span>
+        <span class="c1"># combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors for the entire region (chain rule)</span>
         <span class="n">derivatives_wrt_parameters</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
             <span class="n">each_pixel</span><span class="o">.</span><span class="n">combine_derivatives_wrt_nuclides</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">material_dict_base</span><span class="p">)</span>

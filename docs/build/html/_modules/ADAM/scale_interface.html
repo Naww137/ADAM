@@ -110,12 +110,17 @@
 
 <div class="viewcode-block" id="read_total_sensitivity_by_nuclide"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.read_total_sensitivity_by_nuclide">[docs]</a><span class="k">def</span> <span class="nf">read_total_sensitivity_by_nuclide</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Reads out energy integrated total sensitivities for each nuclide in each material id region.</span>
+<span class="sd">    Reads out energy integrated total sensitivities for each nuclide for each material id.</span>
+
+<span class="sd">    This function reads sensitivity data from the SDF, but needs to read the output file as well in order to get atom densities.</span>
+<span class="sd">    A more simple implementation is to also read sensitivities from the output file, but a weird bug in TSUNAMI causes these not to always be written </span>
+<span class="sd">    correctly. See the old function &quot;read_total_sensitivity_by_nuclide_OUTPUTFILEONLY&quot; in this scale_interface module for the more simple implemntation.</span>
+<span class="sd">    Perhaps the TSUNAMI bug will be fixed in the future.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    tsunami_file_string : string</span>
-<span class="sd">        Filenmae of the SCALE.out file to read.</span>
+<span class="sd">        Basename of the of the SCALE outfiles file to read.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -125,67 +130,97 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">did_not_find_keff</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">did_not_find_sensitivities</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s1">.sdf&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">skiplines</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">line_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
             
-            <span class="c1"># read out k-effective, occurs before sensitivities</span>
-            <span class="k">if</span> <span class="s2">&quot;best estimate system k-eff&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line_count</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;k-eff&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;k-eff not found in SDF&quot;</span><span class="p">)</span>
                 <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                <span class="n">keff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
-                <span class="n">unc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
-                <span class="n">did_not_find_keff</span> <span class="o">=</span> <span class="kc">False</span>
-                
-            <span class="c1"># read out sensitivities</span>
-            <span class="k">if</span> <span class="s2">&quot;Total Sensitivity Coefficients by Nuclide&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                <span class="n">in_data</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">did_not_find_sensitivities</span> <span class="o">=</span> <span class="kc">False</span>
-                
-                <span class="c1"># throw error if keff not found before trying to use the keff variable</span>
-                <span class="k">if</span> <span class="n">did_not_find_keff</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No k-eff found, it seems that KENO did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span> 
-
-                <span class="k">continue</span>
+                <span class="n">keff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">k_unc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
             
-            <span class="k">if</span> <span class="n">in_data</span><span class="p">:</span>
-                <span class="n">skiplines</span> <span class="o">+=</span> <span class="mi">1</span>
-                
-                <span class="k">if</span> <span class="n">skiplines</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
-                    
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
-                        <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="k">continue</span>
-                    
-                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                    
-                    <span class="n">mixture_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                    <span class="n">isotope</span> <span class="o">=</span> <span class="n">splitline</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="n">atom_density</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                    <span class="n">sensitivity</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-                    <span class="n">uncertainty</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
-                    <span class="n">absolute_sensitivity</span> <span class="o">=</span> <span class="n">sensitivity</span><span class="o">*</span><span class="n">atom_density</span><span class="o">/</span><span class="n">keff</span>
-                    
-                    <span class="k">if</span> <span class="n">mixture_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-                        <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-                    <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">sensitivity</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">atom_density</span><span class="p">,</span> <span class="n">absolute_sensitivity</span><span class="p">)</span>
-        
-        <span class="c1"># throw error if keff or sensitivities were not found</span>
-        <span class="k">if</span> <span class="n">did_not_find_keff</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No k-eff found, it seems that KENO did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>   
-        <span class="k">if</span> <span class="n">did_not_find_sensitivities</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No sensitivities found, it seems that SAMS did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-                    
+            <span class="k">if</span> <span class="s2">&quot;total&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">in_data</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">isotope</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">in_data_line_count</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">continue</span>
 
-    <span class="c1">### Now parse dictionary data from scale into pixels in pixel array</span>
+            <span class="k">if</span> <span class="n">in_data</span><span class="p">:</span>
+        
+                <span class="k">if</span> <span class="n">in_data_line_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">mixture_id</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">in_data_line_count</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">sensitivity</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">uncertainty</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="n">in_data_line_count</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">if</span> <span class="n">mixture_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>     <span class="c1"># mixture id==0 is for system interated sensitivity, we don&#39;t need this yet</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">mixture_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                            <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sensitivity</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">]</span> <span class="c1">#, atom_density, absolute_sensitivity)</span>
+
+                <span class="n">in_data_line_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">line_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+
+    <span class="c1">### Read output file to get atom densities and add absolute sensitivity to dicitonary</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s1">.out&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">in_mixing_table</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">in_mixture</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">line_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="s2">&quot;mixing table&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">in_mixing_table</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="n">in_mixing_table</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;mixture = &quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">mixture_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">in_mixture</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">in_mixture_line_count</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">in_mixture</span><span class="p">:</span>
+        
+                    <span class="k">if</span> <span class="n">in_mixture_line_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splitline</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">in_mixture</span> <span class="o">=</span> <span class="kc">False</span>
+                            <span class="k">continue</span>
+
+                        <span class="n">isotope</span> <span class="o">=</span> <span class="n">splitline</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+                        <span class="n">atom_density</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">mixture_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mixture ID found in mixing table of .out but not in the SDF&quot;</span><span class="p">)</span>
+                        <span class="n">absolute_sensitivity</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">atom_density</span><span class="o">/</span><span class="n">keff</span>
+                        <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">atom_density</span><span class="p">,</span> <span class="n">absolute_sensitivity</span><span class="p">])</span>
+
+                    <span class="n">in_mixture_line_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+                <span class="k">if</span> <span class="s2">&quot;finished preparing the cross sections&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">in_mixing_table</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+    <span class="c1">### Now put dictionary data from scale into pixels in pixel array</span>
     <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
         <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">region</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">region_definition</span><span class="p">):</span>
             <span class="n">scale_material_id</span> <span class="o">=</span> <span class="n">each_pixel</span><span class="o">.</span><span class="n">pixel_id</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="n">i</span>
             <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">scale_material_id</span><span class="p">]</span>
-                
+
+
     <span class="k">return</span> <span class="n">keff</span></div>
     
 
@@ -222,6 +257,8 @@
         
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">derivatives_wrt_parameters</span><span class="p">)</span></div>
     
+
+
 
 <div class="viewcode-block" id="create_tsunami_input"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.create_tsunami_input">[docs]</a><span class="k">def</span> <span class="nf">create_tsunami_input</span><span class="p">(</span><span class="n">template_file</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">hex_number</span><span class="p">,</span> <span class="n">generations</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -343,7 +380,93 @@
 
 <span class="c1">#%% Unused functions</span>
 
+<div class="viewcode-block" id="read_total_sensitivity_by_nuclide_OUTPUTFILEONLY"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.read_total_sensitivity_by_nuclide_OUTPUTFILEONLY">[docs]</a><span class="k">def</span> <span class="nf">read_total_sensitivity_by_nuclide_OUTPUTFILEONLY</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads out energy integrated total sensitivities for each nuclide in each material id region.</span>
 
+<span class="sd">    This function is no longer used because of a weird bug in TSUNAMI where every now and then a random material sensitivity won&#39;t write to the</span>
+<span class="sd">    Total Sensitivity Coefficients by Nuclide  table in the output file. \n</span>
+<span class="sd">    The updated function in this module that is actually used in ADAM reads sensitivites from the SDF file then atom densities from the output file. </span>
+<span class="sd">    This, however, is a more complicated procedure. The weird bug in TSUNAMI, was noticed to only occur when a material id&#39;s </span>
+<span class="sd">    sensitivites are all zero! This is evident of a deeper bug, hoever, if this more simple function for reading sensitivities from the output file is desired,</span>
+<span class="sd">    include some logic that sets sensitivities to zero for all isotopes in a given material ID if that ID id not found in the output file.</span>
+<span class="sd">    </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tsunami_file_string : string</span>
+<span class="sd">        Filenmae of the SCALE.out file to read.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data : nested dict</span>
+<span class="sd">        Nested dictionary where first set of keys are scale material id numbers, then second set of keys are nuclides.</span>
+<span class="sd">        For a given material/isotope key-set, 4 values are given as a tuple: (sensitivity, uncertainty, atom_density, absolute_sensitivity)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">did_not_find_keff</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">did_not_find_sensitivities</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">skiplines</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            
+            <span class="c1"># read out k-effective, occurs before sensitivities</span>
+            <span class="k">if</span> <span class="s2">&quot;best estimate system k-eff&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">keff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+                <span class="n">unc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+                <span class="n">did_not_find_keff</span> <span class="o">=</span> <span class="kc">False</span>
+                
+            <span class="c1"># read out sensitivities</span>
+            <span class="k">if</span> <span class="s2">&quot;Total Sensitivity Coefficients by Nuclide&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">in_data</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">did_not_find_sensitivities</span> <span class="o">=</span> <span class="kc">False</span>
+                
+                <span class="c1"># throw error if keff not found before trying to use the keff variable</span>
+                <span class="k">if</span> <span class="n">did_not_find_keff</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No k-eff found, it seems that KENO did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span> 
+
+                <span class="k">continue</span>
+            
+            <span class="k">if</span> <span class="n">in_data</span><span class="p">:</span>
+                <span class="n">skiplines</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+                <span class="k">if</span> <span class="n">skiplines</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+                    
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
+                        <span class="n">in_data</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">continue</span>
+                    
+                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    
+                    <span class="n">mixture_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">isotope</span> <span class="o">=</span> <span class="n">splitline</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">atom_density</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">sensitivity</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+                    <span class="n">uncertainty</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+                    <span class="n">absolute_sensitivity</span> <span class="o">=</span> <span class="n">sensitivity</span><span class="o">*</span><span class="n">atom_density</span><span class="o">/</span><span class="n">keff</span>
+                    
+                    <span class="k">if</span> <span class="n">mixture_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                        <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">sensitivity</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">atom_density</span><span class="p">,</span> <span class="n">absolute_sensitivity</span><span class="p">)</span>
+        
+        <span class="c1"># throw error if keff or sensitivities were not found</span>
+        <span class="k">if</span> <span class="n">did_not_find_keff</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No k-eff found, it seems that KENO did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>   
+        <span class="k">if</span> <span class="n">did_not_find_sensitivities</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No sensitivities found, it seems that SAMS did not complete for </span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+
+    <span class="c1">### Now parse dictionary data from scale into pixels in pixel array</span>
+    <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
+        <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">region</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">region_definition</span><span class="p">):</span>
+            <span class="n">scale_material_id</span> <span class="o">=</span> <span class="n">each_pixel</span><span class="o">.</span><span class="n">pixel_id</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="n">i</span>
+            <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">scale_material_id</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">keff</span></div>
 
 <div class="viewcode-block" id="read_total_sensitivity_by_mixture"><a class="viewcode-back" href="../../source_api/scale_interface.html#ADAM.scale_interface.read_total_sensitivity_by_mixture">[docs]</a><span class="k">def</span> <span class="nf">read_total_sensitivity_by_mixture</span><span class="p">(</span><span class="n">tsunami_file_string</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
