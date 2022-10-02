@@ -8,7 +8,7 @@ To use **ADAM**, you can install install it using pip:
 
 :code:`pip install git+https://github.com/Naww137/ADAM`
 
-If a new version of ADAM has been release, you can update ADAM by running:
+If a new version of ADAM has been released, you can update ADAM by running:
 
 :code:`pip install --upgrade git+https://github.com/Naww137/ADAM`
 

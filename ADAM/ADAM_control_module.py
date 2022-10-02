@@ -115,11 +115,11 @@ def update(step, pixel_array, pdef):
 
         if pdef.write_output:
 
-            # if os.path.isdir('parameter_data'):
-            #     os.rmdir('parameter_data')
-            #     os.mkdir('parameter_data')
-            # else:
-            #     os.mkdir('parameter_data')
+            if os.path.isdir('parameter_data'):
+                os.rmdir('parameter_data')
+                os.mkdir('parameter_data')
+            else:
+                os.mkdir('parameter_data')
 
             with open('parameter_data/output.csv', 'w') as output_file:
                 output_file.write("step, keff\n")
