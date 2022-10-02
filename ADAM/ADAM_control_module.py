@@ -115,10 +115,11 @@ def update(step, pixel_array, pdef):
 
         if pdef.write_output:
 
-            if os.path.isdir('parameter_data'):
-                pass
-            else:
-                os.mkdir('parameter_data')
+            # if os.path.isdir('parameter_data'):
+            #     os.rmdir('parameter_data')
+            #     os.mkdir('parameter_data')
+            # else:
+            #     os.mkdir('parameter_data')
 
             with open('parameter_data/output.csv', 'w') as output_file:
                 output_file.write("step, keff\n")
@@ -143,15 +144,15 @@ def update(step, pixel_array, pdef):
 
 
         ### Pull out keff and sensitivities from previous job
-        output_file = 'tsunami_job.out'
+        solver_file_basename = 'tsunami_job'
         #!!! if file does not exist throw error
 
         # outputs keff and writes derivative dfs to each respective pixel
         # derivatives are absolute but wrt to each nuclide within each region
-        keff = scale_interface.read_total_sensitivity_by_nuclide(output_file, pixel_array)
+        keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job", pixel_array)
 
 
-        # combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors (chain rule)
+        # combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors for the entire region (chain rule)
         derivatives_wrt_parameters = []
         for each_pixel in pixel_array:
             each_pixel.combine_derivatives_wrt_nuclides(pdef.material_dict_base)

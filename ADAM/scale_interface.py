@@ -44,12 +44,17 @@ def read_keff(tsunami_file_string):
 
 def read_total_sensitivity_by_nuclide(tsunami_file_string, pixel_array):
     """
-    Reads out energy integrated total sensitivities for each nuclide in each material id region.
+    Reads out energy integrated total sensitivities for each nuclide for each material id.
+
+    This function reads sensitivity data from the SDF, but needs to read the output file as well in order to get atom densities.
+    A more simple implementation is to also read sensitivities from the output file, but a weird bug in TSUNAMI causes these not to always be written 
+    correctly. See the old function "read_total_sensitivity_by_nuclide_OUTPUTFILEONLY" in this scale_interface module for the more simple implemntation.
+    Perhaps the TSUNAMI bug will be fixed in the future.
 
     Parameters
     ----------
     tsunami_file_string : string
-        Filenmae of the SCALE.out file to read.
+        Basename of the of the SCALE outfiles file to read.
 
     Returns
     -------
@@ -59,67 +64,97 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string, pixel_array):
 
     """
     data = {}
-    did_not_find_keff = True
-    did_not_find_sensitivities = True
-    with open(tsunami_file_string, 'r') as f:
+    with open(f'{tsunami_file_string}.sdf', 'r') as f:
         in_data = False
-        skiplines = 0
+        line_count = 0
         for line in f:
             
-            # read out k-effective, occurs before sensitivities
-            if "best estimate system k-eff" in line:
+            if line_count == 3:
+                if "k-eff" not in line:
+                    raise ValueError("k-eff not found in SDF")
                 splitline = line.split()
-                keff = float(splitline[5])
-                unc = float(splitline[9])
-                did_not_find_keff = False
-                
-            # read out sensitivities
-            if "Total Sensitivity Coefficients by Nuclide" in line:
-                in_data = True
-                did_not_find_sensitivities = False
-                
-                # throw error if keff not found before trying to use the keff variable
-                if did_not_find_keff:
-                    raise ValueError(f"No k-eff found, it seems that KENO did not complete for {tsunami_file_string}.") 
-
-                continue
+                keff = float(splitline[0])
+                k_unc = float(splitline[2])
             
-            if in_data:
-                skiplines += 1
-                
-                if skiplines > 4:
-                    
-                    if len(line.strip()) == 0 :
-                        in_data = False
-                        continue
-                    
-                    splitline = line.split()
-                    
-                    mixture_id = float(splitline[0])
-                    isotope = splitline[1]
-                    atom_density = float(splitline[2])
-                    sensitivity = float(splitline[3])
-                    uncertainty = float(splitline[5])
-                    absolute_sensitivity = sensitivity*atom_density/keff
-                    
-                    if mixture_id not in data:
-                        data[mixture_id] = {}
-                    data[mixture_id][isotope] = (sensitivity, uncertainty, atom_density, absolute_sensitivity)
-        
-        # throw error if keff or sensitivities were not found
-        if did_not_find_keff:
-                    raise ValueError(f"No k-eff found, it seems that KENO did not complete for {tsunami_file_string}.")   
-        if did_not_find_sensitivities:
-            raise ValueError(f"No sensitivities found, it seems that SAMS did not complete for {tsunami_file_string}.")
-                    
+            if "total" in line:
+                in_data = True
+                isotope = line.split()[0]
+                in_data_line_count = 0
+                continue
 
-    ### Now parse dictionary data from scale into pixels in pixel array
+            if in_data:
+        
+                if in_data_line_count == 0:
+                    splitline = line.split()
+                    mixture_id = abs(float(splitline[0]))
+                if in_data_line_count == 2:
+                    splitline = line.split()
+                    sensitivity = float(splitline[0])
+                    uncertainty = float(splitline[1])
+
+                if in_data_line_count == 3:
+                    in_data = False
+                    if mixture_id == 0:     # mixture id==0 is for system interated sensitivity, we don't need this yet
+                        pass
+                    else:
+                        if mixture_id not in data:
+                            data[mixture_id] = {}
+                        data[mixture_id][isotope] = [sensitivity, uncertainty] #, atom_density, absolute_sensitivity)
+
+                in_data_line_count += 1
+
+            line_count += 1
+
+
+    ### Read output file to get atom densities and add absolute sensitivity to dicitonary
+    with open(f'{tsunami_file_string}.out', 'r') as f:
+        in_mixing_table = False
+        in_mixture = False
+        line_count = 0
+        for line in f:
+
+            if "mixing table" in line:
+                if len(line.strip().split()) == 2:
+                    in_mixing_table = True
+
+            if in_mixing_table:
+                if "mixture = " in line:
+                    splitline = line.split()
+                    mixture_id = float(splitline[2])
+                    in_mixture = True
+                    in_mixture_line_count = 0
+                    continue
+                if in_mixture:
+        
+                    if in_mixture_line_count == 0:
+                        pass
+                    else:
+                        splitline = line.split()
+                        if len(splitline) == 0:
+                            in_mixture = False
+                            continue
+
+                        isotope = splitline[6]
+                        atom_density = float(splitline[1])
+                        if mixture_id not in data:
+                            raise ValueError("Mixture ID found in mixing table of .out but not in the SDF")
+                        absolute_sensitivity = data[mixture_id][isotope][0]*atom_density/keff
+                        data[mixture_id][isotope].extend([atom_density, absolute_sensitivity])
+
+                    in_mixture_line_count += 1
+                
+                if "finished preparing the cross sections" in line:
+                    in_mixing_table = False
+
+
+    ### Now put dictionary data from scale into pixels in pixel array
     for each_pixel in pixel_array:
         each_pixel.sensitivity_data_by_nuclide = {}
         for i, region in enumerate(each_pixel.region_definition):
             scale_material_id = each_pixel.pixel_id*10 + i
             each_pixel.sensitivity_data_by_nuclide[region] = data[scale_material_id]
-                
+
+
     return keff
     
 
@@ -156,6 +191,8 @@ def get_combined_derivatives(pixel_array, material_dict_base):
         
     return pd.DataFrame(derivatives_wrt_parameters)
     
+
+
 
 def create_tsunami_input(template_file, input_file, step, hex_number, generations):
     """
@@ -277,7 +314,93 @@ def material_string(pixel):
 
 #%% Unused functions
 
+def read_total_sensitivity_by_nuclide_OUTPUTFILEONLY(tsunami_file_string, pixel_array):
+    """
+    Reads out energy integrated total sensitivities for each nuclide in each material id region.
 
+    This function is no longer used because of a weird bug in TSUNAMI where every now and then a random material sensitivity won't write to the
+    Total Sensitivity Coefficients by Nuclide  table in the output file. \n
+    The updated function in this module that is actually used in ADAM reads sensitivites from the SDF file then atom densities from the output file. 
+    This, however, is a more complicated procedure. The weird bug in TSUNAMI, was noticed to only occur when a material id's 
+    sensitivites are all zero! This is evident of a deeper bug, hoever, if this more simple function for reading sensitivities from the output file is desired,
+    include some logic that sets sensitivities to zero for all isotopes in a given material ID if that ID id not found in the output file.
+    
+
+    Parameters
+    ----------
+    tsunami_file_string : string
+        Filenmae of the SCALE.out file to read.
+
+    Returns
+    -------
+    data : nested dict
+        Nested dictionary where first set of keys are scale material id numbers, then second set of keys are nuclides.
+        For a given material/isotope key-set, 4 values are given as a tuple: (sensitivity, uncertainty, atom_density, absolute_sensitivity)
+
+    """
+    data = {}
+    did_not_find_keff = True
+    did_not_find_sensitivities = True
+    with open(tsunami_file_string, 'r') as f:
+        in_data = False
+        skiplines = 0
+        for line in f:
+            
+            # read out k-effective, occurs before sensitivities
+            if "best estimate system k-eff" in line:
+                splitline = line.split()
+                keff = float(splitline[5])
+                unc = float(splitline[9])
+                did_not_find_keff = False
+                
+            # read out sensitivities
+            if "Total Sensitivity Coefficients by Nuclide" in line:
+                in_data = True
+                did_not_find_sensitivities = False
+                
+                # throw error if keff not found before trying to use the keff variable
+                if did_not_find_keff:
+                    raise ValueError(f"No k-eff found, it seems that KENO did not complete for {tsunami_file_string}.") 
+
+                continue
+            
+            if in_data:
+                skiplines += 1
+                
+                if skiplines > 4:
+                    
+                    if len(line.strip()) == 0 :
+                        in_data = False
+                        continue
+                    
+                    splitline = line.split()
+                    
+                    mixture_id = float(splitline[0])
+                    isotope = splitline[1]
+                    atom_density = float(splitline[2])
+                    sensitivity = float(splitline[3])
+                    uncertainty = float(splitline[5])
+                    absolute_sensitivity = sensitivity*atom_density/keff
+                    
+                    if mixture_id not in data:
+                        data[mixture_id] = {}
+                    data[mixture_id][isotope] = (sensitivity, uncertainty, atom_density, absolute_sensitivity)
+        
+        # throw error if keff or sensitivities were not found
+        if did_not_find_keff:
+                    raise ValueError(f"No k-eff found, it seems that KENO did not complete for {tsunami_file_string}.")   
+        if did_not_find_sensitivities:
+            raise ValueError(f"No sensitivities found, it seems that SAMS did not complete for {tsunami_file_string}.")
+
+
+    ### Now parse dictionary data from scale into pixels in pixel array
+    for each_pixel in pixel_array:
+        each_pixel.sensitivity_data_by_nuclide = {}
+        for i, region in enumerate(each_pixel.region_definition):
+            scale_material_id = each_pixel.pixel_id*10 + i
+            each_pixel.sensitivity_data_by_nuclide[region] = data[scale_material_id]
+
+    return keff
 
 def read_total_sensitivity_by_mixture(tsunami_file_string):
     """
