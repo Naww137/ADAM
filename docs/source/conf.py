@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 project = 'ADAM'
 copyright = '2022, Walton'
 author = 'Walton'
-release = '0.1'
+release = '1.0.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -49,7 +49,8 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
-# Whether to create a Sphinx table of contents for the lists of class methods and attributes. If a table of contents is made, Sphinx expects each entry to have a separate page. True by default
+# Whether to create a Sphinx table of contents for the lists of class methods and attributes. 
+# If a table of contents is made, Sphinx expects each entry to have a separate page. True by default
 numpydoc_class_members_toctree = False
 
 

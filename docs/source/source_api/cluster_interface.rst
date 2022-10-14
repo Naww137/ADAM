@@ -1,5 +1,5 @@
 Cluster Interface
-*********************
+*****************
 
 .. _cluster_interface:
 
