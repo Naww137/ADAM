@@ -5,6 +5,8 @@ import pandas as pd
 import random
 import os
 from ADAM import scale_interface
+from ADAM import cluster_interface
+import shutil
 
 
 #%%
@@ -40,7 +42,6 @@ def Create_New_Input(pixel_array, parameter_df, pdef, step):
         pixel_array[i].apply_density_factors(density_factor_df.iloc[i])    
     
     ### Building scale input
-    
     if pdef.build_input:
 
         # generate random number seed
@@ -66,20 +67,11 @@ def Create_New_Input(pixel_array, parameter_df, pdef, step):
         print("Skipping building scale input file.")
 
 
+#%%
 
-
-#%% initialize pixel array
-
-
-
-
-#%%%
-
-def update(step, pixel_array, pdef):
+def ADAM_update_parameter_df(pdef, obj_derivative_df, step):
     """
-    Performs the ADAM gradient descent update on the optimization parameters.
-
-    This is the primary control function for the algorithm. 
+    Performs the ADAM update on the optimization parameters.
 
     The parameter_df variable is a panda DataFrame that holds all of the ADAM variables, that is:
     theta   :   optimization parameters
@@ -89,6 +81,62 @@ def update(step, pixel_array, pdef):
     Often it is the case that a single pixel will have multiple optimization parameters applied to different materials within it.
     In such a case, the ADAM variables become indexed vectors where the index in the data frame indicates which material that parameter will be
     applied to and the location in the vector indicates the geometric location of that pixel.
+
+    Parameters
+    ----------
+    pdef : _type_
+        _description_
+    obj_derivative_df : _type_
+        _description_
+    step : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+
+    Raises
+    ------
+    ValueError
+        _description_
+    """
+
+    theta = np.array(parameter_df.filter(like='theta'))
+    dObj_dtheta = np.array(obj_derivative_df)
+    mt = np.array(parameter_df.filter(like='mt'))
+    vt = np.array(parameter_df.filter(like='vt'))
+
+    mt_next = (pdef.beta_1 * mt + (1 - pdef.beta_1) * dObj_dtheta)
+    vt_next = (pdef.beta_2 * vt + (1 - pdef.beta_2) * dObj_dtheta**2) 
+    mt_next_hat = (mt_next / (1 - pdef.beta_1**step))
+    vt_next_hat = (vt_next/ (1 - pdef.beta_2**step))
+    
+    new_theta = (theta - (pdef.alpha_value * mt_next_hat) / (np.sqrt(vt_next_hat) + pdef.epsilon))
+
+    # check for any NaNs
+    if np.isnan(new_theta).any():
+        print(step)
+        raise ValueError("NaN in new_theta, step {step}")
+
+    ### Redefine and write parameter dataframe
+    parameter_df = pd.DataFrame()
+    for i in range(pdef.max_parameters):
+        temporary_df = pd.DataFrame({f'theta{i}':   new_theta.T[i],
+                                        f'mt{i}':   mt_next.T[i],
+                                        f'vt{i}':   vt_next.T[i]})
+        parameter_df = pd.concat([parameter_df,temporary_df], axis=1)
+
+    return parameter_df
+
+
+
+
+#%%%
+
+def run(step, pixel_array, pdef):
+    """
+    This is the primary control function for the ADAM algorithm.
     
     The parameter_df variable is defined from the previous step (or from the problem definition if on step 1). 
     Then that sensitivities are read from the MC transport/sensitivity calculation and converted to derivatives
@@ -106,102 +154,75 @@ def update(step, pixel_array, pdef):
     """
 
     if step == 1:
-        # If we are at step 1:
-                # parameter_df = initial parameters given by user
-                # create csv files to save data
-                # do not read sensitivities from output files
-
+        ### If we are at step 1: parameter_df = initial parameters given by user
         parameter_df = pdef.parameter_df
-
+        ### Write output for starting step
         if pdef.write_output:
-
             if os.path.isdir('parameter_data'):
-                os.rmdir('parameter_data')
+                shutil.rmtree('parameter_data')
                 os.mkdir('parameter_data')
             else:
                 os.mkdir('parameter_data')
-
             with open('parameter_data/output.csv', 'w') as output_file:
                 output_file.write("step, keff\n")
-
             parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
 
-        ### Create a new input file
-        Create_New_Input(pixel_array, parameter_df, pdef, step)
-
+            keff=0
 
     else:
-
-
+        # If at step > 1:
+        # Check for parameter data directory
         if os.path.isdir('parameter_data'):
             pass
         else:
-            raise ValueError("Starting from step>1 but no parameter_data is present. Cannot find directory parameter_data/")
-
-        ### Read parameters from previous step
+            raise ValueError("Step>1 but no parameter_data is present. Cannot find directory parameter_data/")
+        # Read parameters from previous step
         parameter_df = pd.read_csv(f'parameter_data/parameters_{step-1}.csv')
-        
 
 
-        ### Pull out keff and sensitivities from previous job
-        solver_file_basename = 'tsunami_job'
-        #!!! if file does not exist throw error
+        ### Create a new MC input file
+        Create_New_Input(pixel_array, parameter_df, pdef, step)
 
+
+        ### Run the MC simulation
+        if pdef.submit_job:
+            cluster_interface.submit_jobs_to_necluster('tsunami_job')
+            cluster_interface.wait_on_submitted_job('tsunami_job')
+            cluster_interface.remove_unwanted_files()
+
+
+        ### Read output of MC simulation
         # outputs keff and writes derivative dfs to each respective pixel
         # derivatives are absolute but wrt to each nuclide within each region
         keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job", pixel_array)
 
 
-        # combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors for the entire region (chain rule)
+        ### if output is not correct, re-run
+
+
+        ### Combine derivatives to get them wrt optimization parameters
+        # wrt nuclides and region combined to derivatives wrt multiplication factors applied to compound for the entire region (chain rule)
         derivatives_wrt_parameters = []
         for each_pixel in pixel_array:
             each_pixel.combine_derivatives_wrt_nuclides(pdef.material_dict_base)
             each_pixel.combine_region_derivatives()
             derivatives_wrt_parameters.append(each_pixel.derivatives_wrt_parameters)
         derivative_df = pd.DataFrame(derivatives_wrt_parameters)
-        
-        # chain rule for transformation function to get derivatives wrt optimization parameters
+        # chain rule for transformation function to get derivatives wrt optimization parameters (this is where the objective function enters)
         obj_derivative_df = pdef.objective_derivative(derivative_df, parameter_df.filter(like='theta'))
         
 
-        ### perform the ADAM algorithm update (remember, this is a minimization)
-        theta = np.array(parameter_df.filter(like='theta'))
-        dObj_dtheta = np.array(obj_derivative_df)
-        mt = np.array(parameter_df.filter(like='mt'))
-        vt = np.array(parameter_df.filter(like='vt'))
+        ### Perform the ADAM update to get new parameters (remember, this is a minimization)
+        parameter_df = ADAM_update_parameter_df(pdef, obj_derivative_df, step)
 
-        mt_next = (pdef.beta_1 * mt + (1 - pdef.beta_1) * dObj_dtheta)
-        vt_next = (pdef.beta_2 * vt + (1 - pdef.beta_2) * dObj_dtheta**2) 
-        mt_next_hat = (mt_next / (1 - pdef.beta_1**step))
-        vt_next_hat = (vt_next/ (1 - pdef.beta_2**step))
-        
-        new_theta = (theta - (pdef.alpha_value * mt_next_hat) / (np.sqrt(vt_next_hat) + pdef.epsilon))
-
-
-        # check for any NaNs
-        if np.isnan(new_theta).any():
-            print(step)
-            raise ValueError("NaN in new_theta, step {step}")
-
-
-        # redefine parameter dataframe
-        parameter_df = pd.DataFrame()
-        for i in range(pdef.max_parameters):
-            temporary_df = pd.DataFrame({f'theta{i}':   new_theta.T[i],
-                                            f'mt{i}':   mt_next.T[i],
-                                            f'vt{i}':   vt_next.T[i]})
-            parameter_df = pd.concat([parameter_df,temporary_df], axis=1)
-
-
-        ### Save new parameters
+        # write new parameters
         if pdef.write_output:
             parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
             with open('parameter_data/output.csv', 'a') as output_file:
                     output_file.write(f"{step}, {keff}\n")
 
-        ### Create a new input file
-        Create_New_Input(pixel_array, parameter_df, pdef, step)
+    return keff
 
     
 
-# %%
+#%%
