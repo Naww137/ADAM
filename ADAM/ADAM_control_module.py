@@ -134,7 +134,7 @@ def ADAM_update_parameter_df(pdef, obj_derivative_df, step):
 
 #%%%
 
-def run(step, pixel_array, pdef):
+def run(step, pixel_array, pdef, output_filepath):
     """
     This is the primary control function for the ADAM algorithm.
     
@@ -181,13 +181,13 @@ def run(step, pixel_array, pdef):
 
 
         ### Create a new MC input file
-        Create_New_Input(pixel_array, parameter_df, pdef, step)
+        Create_New_Input(pixel_array, parameter_df, pdef, step-1)
 
 
         ### Run the MC simulation
         if pdef.submit_job:
             cluster_interface.submit_jobs_to_necluster('tsunami_job')
-            cluster_interface.wait_on_submitted_job('tsunami_job')
+            cluster_interface.wait_on_submitted_job('tsunami_job', output_filepath)
             cluster_interface.remove_unwanted_files()
 
 
@@ -195,6 +195,8 @@ def run(step, pixel_array, pdef):
         # outputs keff and writes derivative dfs to each respective pixel
         # derivatives are absolute but wrt to each nuclide within each region
         keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job", pixel_array)
+        with open(output_filepath, 'a') as f:
+            f.write(f"{step-1}, {keff}\n")
 
 
         ### if output is not correct, re-run
@@ -213,13 +215,13 @@ def run(step, pixel_array, pdef):
         
 
         ### Perform the ADAM update to get new parameters (remember, this is a minimization)
-        parameter_df = ADAM_update_parameter_df(pdef, obj_derivative_df, step)
+        parameter_df = ADAM_update_parameter_df(pdef, obj_derivative_df, step-1)
 
         # write new parameters
         if pdef.write_output:
             parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
             with open('parameter_data/output.csv', 'a') as output_file:
-                    output_file.write(f"{step}, {keff}\n")
+                    output_file.write(f"{step-1}, {keff}\n")
 
     return keff
 

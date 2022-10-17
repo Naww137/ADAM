@@ -69,14 +69,14 @@ class Problem_Definition:
         self.number_of_pixels = 121
 
         ### Define geometric regions (repeating regions in this case) and the materials present within each
-        self.region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
+        # self.region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
         # self.region_definition = {'whole_pixel':['fuel','moderator']}
-        # self.region_definition = {'whole_pixel':['fuelmodmix']}
+        self.region_definition = {'whole_pixel':['fuelmodmix']}
 
         ### Define the optimization parameters corresponding to the geometric region definition
-        self.parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
+        # self.parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
         # self.parameter_definition = {'whole_pixel':['theta0','theta1']}
-        # self.parameter_definition = {'whole_pixel':['theta0']}
+        self.parameter_definition = {'whole_pixel':['theta0']}
 
 
     def Material_Definition(self):

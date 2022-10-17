@@ -78,21 +78,25 @@ def submit_jobs_to_necluster(file_name_flag):
     
     
     
-def wait_on_submitted_job(file_name_flag):
-    print("Waiting on job: ", file_name_flag)
-    _ = 0
-    total_time = 0
-    while _ == 0:
-        for file in os.listdir("."):
-            if '_done' in file:
-                #time.sleep(5)
-                print("Job complete! Continuing...")
-                return
+def wait_on_submitted_job(file_name_flag, output_filepath):
 
-        print("Not yet complete, waiting 30 seconds. Total: ", total_time / 60, "minutes")
-        total_time += 30
-        time.sleep(30)
-        
+    with open(output_filepath, 'a') as f:
+        f.write("Waiting on job\n")
+
+        _ = 0
+        total_time = 0
+        while _ == 0:
+            for file in os.listdir("."):
+                if '_done' in file:
+                    #time.sleep(5)
+                    f.write("Job complete! Continuing...\n")
+                    return
+
+            f.write(f"Not yet complete, waiting 60 seconds. Total: {total_time/60} minutes\n")
+            total_time += 60
+            time.sleep(60)
+            
+        f.close()
 
 def remove_unwanted_files():
     # os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *.html *.htmd *.sh* *.sdf *.txt *.3dmap')
