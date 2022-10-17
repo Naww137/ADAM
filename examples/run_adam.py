@@ -29,7 +29,7 @@ else:
 
 
 ### Run ADAM 
-while step < 3:
+while step < 5:
 
     keff = ADAM_control_module.run(step, pixel_array, pdef, output_filepath)
 

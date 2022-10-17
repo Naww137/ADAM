@@ -69,7 +69,7 @@ def Create_New_Input(pixel_array, parameter_df, pdef, step):
 
 #%%
 
-def ADAM_update_parameter_df(pdef, obj_derivative_df, step):
+def ADAM_update_parameter_df(pdef, parameter_df, obj_derivative_df, step):
     """
     Performs the ADAM update on the optimization parameters.
 
@@ -215,7 +215,7 @@ def run(step, pixel_array, pdef, output_filepath):
         
 
         ### Perform the ADAM update to get new parameters (remember, this is a minimization)
-        parameter_df = ADAM_update_parameter_df(pdef, obj_derivative_df, step-1)
+        parameter_df = ADAM_update_parameter_df(pdef, parameter_df, obj_derivative_df, step-1)
 
         # write new parameters
         if pdef.write_output:
