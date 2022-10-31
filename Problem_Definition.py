@@ -30,10 +30,10 @@ class Problem_Definition:
         self.write_output = True
         self.build_input = True
         self.submit_job = False
-        # self.template_file = 'spent_fuel_cask_template.inp'
+        self.template_file = 'spent_fuel_cask_template.inp'
         # self.template_file = 'tsunami_template_file_10x10.inp'
         # self.template_file = 'tsunami_template_file_44x44.inp'
-        self.template_file = 'tsunami_template_11x11.inp'
+        # self.template_file = 'tsunami_template_11x11.inp'
         self.generations = 10
         self.temperature = 300
 
@@ -52,7 +52,7 @@ class Problem_Definition:
             parameter_df = pd.DataFrame()
             for i in range(self.max_parameters):
                 if i == 0:
-                    parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*-1.0
+                    parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*-.2
                 else:
                     parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*-6
                 parameter_df[f'mt{i}'] = np.zeros([self.number_of_pixels])
@@ -69,14 +69,14 @@ class Problem_Definition:
         self.number_of_pixels = 121
 
         ### Define geometric regions (repeating regions in this case) and the materials present within each
-        # self.region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
+        self.region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
         # self.region_definition = {'whole_pixel':['fuel','moderator']}
-        self.region_definition = {'whole_pixel':['fuelmodmix']}
+        # self.region_definition = {'whole_pixel':['fuelmodmix']}
 
         ### Define the optimization parameters corresponding to the geometric region definition
-        # self.parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
+        self.parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
         # self.parameter_definition = {'whole_pixel':['theta0','theta1']}
-        self.parameter_definition = {'whole_pixel':['theta0']}
+        # self.parameter_definition = {'whole_pixel':['theta0']}
 
 
     def Material_Definition(self):
@@ -205,35 +205,9 @@ class Problem_Definition:
             with respect to the optimization parameters "theta".
 
         """
-
-        ### Get Nbase vector - Nbase summed over all regions/isotopes for each optimization parameter
-        Nbase_region = {}
-        for region in self.region_definition:
-            for material, optimization_parameter in zip(self.region_definition[f'{region}'], self.parameter_definition[f'{region}']):
-                
-                Nbase_material = 0
-                for isotope in self.material_dict_base[f'{material}'].keys():
-                    Nbase_material += self.material_dict_base[f'{material}'][f'{isotope}']
-
-                if optimization_parameter in Nbase_region:
-                    Nbase_region[optimization_parameter].append(Nbase_material)
-                else:
-                    Nbase_region[optimization_parameter] = [Nbase_material]
-
-        Nbase = []
-        for optimization_parameter in Nbase_region:
-            Nbase.append(sum(Nbase_region[optimization_parameter]))
-        Nbase_np = np.array([Nbase]*len(parameter_df))
-
-
-        ### cast into numpy arrays
         derivative_np = np.array(derivative_df)
         parameter_np = np.array(parameter_df)
         
-
-
-        ### put through derivative of objective function
-
         # p3 original, exp transform with penalty
         # r = 100
         # v = 2
@@ -241,24 +215,22 @@ class Problem_Definition:
         # obj_derivative_np = derivative_np - (-r*v*np.exp(-v*(beta_limit+parameter_np)) + r*v*np.exp(v*(parameter_np-beta_limit)))
 
         # p3 with sigmoid and no penalty - currently ignoring contant Nbase that should be multiplied by the second derivative
-        # obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np)**2))
+        obj_derivative_np = -derivative_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np)**2))
         
         # p2 with sigmoid and penalty for total mass
-        r = 100
-        v = 2
-        limit = 61
-        M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
-        dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np)**2)
-        obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
+        # r = 100
+        # v = 2
+        # limit = 61
+        # M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
+        # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np)**2)
+        # obj_derivative_np = - derivative_np*dM_dtheta * r*np.exp(v*(M-limit))*v*dM_dtheta
 
 
 
 
 
-        ### put objective function derivatives into dataframe 
+
         obj_derivative_df = pd.DataFrame(obj_derivative_np, columns=np.array(parameter_df.columns))
 
         return obj_derivative_df
 
-
-#

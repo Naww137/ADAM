@@ -1,4 +1,4 @@
-
+#%%
 from ADAM import ADAM_control_module
 from ADAM import pixel
 import Problem_Definition
@@ -37,3 +37,5 @@ while step < 5:
 
 
 
+
+# %%
