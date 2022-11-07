@@ -19,7 +19,7 @@ for i in range(pdef.number_of_pixels):
     pixel_array.append(pixel.pixel(pdef.region_definition, pdef.parameter_definition, pdef.material_df_base, i+1, pdef.temperature))
 
 ### Input starting step
-step = 1
+step = 598
 if step == 1:
     with open(output_filepath, 'w') as f:
         f.write("Welcome to ADAM!\nYou have just started running, this file will print updates for each step\n")
@@ -29,7 +29,7 @@ else:
 
 
 ### Run ADAM 
-while step < 5:
+while step < 600:
 
     keff = ADAM_control_module.run(step, pixel_array, pdef, output_filepath)
 

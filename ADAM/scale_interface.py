@@ -55,6 +55,8 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string, pixel_array):
     ----------
     tsunami_file_string : string
         Basename of the of the SCALE outfiles file to read.
+    pixel_array : object array
+        Array of pixel objects describing the problem geometry.
 
     Returns
     -------
@@ -106,52 +108,17 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string, pixel_array):
             line_count += 1
 
 
-    ### Read output file to get atom densities and add absolute sensitivity to dicitonary
-    with open(f'{tsunami_file_string}.out', 'r') as f:
-        in_mixing_table = False
-        in_mixture = False
-        line_count = 0
-        for line in f:
-
-            if "mixing table" in line:
-                if len(line.strip().split()) == 2:
-                    in_mixing_table = True
-
-            if in_mixing_table:
-                if "mixture = " in line:
-                    splitline = line.split()
-                    mixture_id = float(splitline[2])
-                    in_mixture = True
-                    in_mixture_line_count = 0
-                    continue
-                if in_mixture:
-        
-                    if in_mixture_line_count == 0:
-                        pass
-                    else:
-                        splitline = line.split()
-                        if len(splitline) == 0:
-                            in_mixture = False
-                            continue
-
-                        isotope = splitline[6]
-                        atom_density = float(splitline[1])
-                        if mixture_id not in data:
-                            raise ValueError("Mixture ID found in mixing table of .out but not in the SDF")
-                        absolute_sensitivity = data[mixture_id][isotope][0]*atom_density/keff
-                        data[mixture_id][isotope].extend([atom_density, absolute_sensitivity])
-
-                    in_mixture_line_count += 1
-                
-                if "finished preparing the cross sections" in line:
-                    in_mixing_table = False
-
-
     ### Now put dictionary data from scale into pixels in pixel array
     for each_pixel in pixel_array:
         each_pixel.sensitivity_data_by_nuclide = {}
         for i, region in enumerate(each_pixel.region_definition):
             scale_material_id = each_pixel.pixel_id*10 + i
+
+            # scale relative sensitivities by atom_dens/keff
+            for isotope, atom_dens in each_pixel.updated_region_materials[region]['combined'].loc[each_pixel.updated_region_materials[region]['combined'] != 0].items():
+                absolute_sensitivity = data[scale_material_id][isotope][0]*atom_dens/keff
+                data[scale_material_id][isotope].extend([atom_dens, absolute_sensitivity])
+
             each_pixel.sensitivity_data_by_nuclide[region] = data[scale_material_id]
 
 
