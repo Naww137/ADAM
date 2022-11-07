@@ -194,7 +194,7 @@ def run(step, pixel_array, pdef, output_filepath):
         ### Read output of MC simulation
         # outputs keff and writes derivative dfs to each respective pixel
         # derivatives are absolute but wrt to each nuclide within each region
-        keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job", pixel_array, pdef)
+        keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job", pixel_array)
         with open(output_filepath, 'a') as f:
             f.write(f"{step-1}, {keff}\n")
 
