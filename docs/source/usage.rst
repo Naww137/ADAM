@@ -37,8 +37,35 @@ Any changes to the conf.py file will not take effect unless you rebuild.
 The HTML files will be created in docs/build/html. The main page can be reached by openning the index.html file. 
 This will launch an HTML page and any of the subsequent pages can be reached from here.
 
+If using conda:
 
+First create a conda environment for this project.
 
+:code:`conda create --name ADAM`
+
+Install the necessary dependencies.
+
+:code:`conda install python numpy pandas sphinx conda-build`
+
+:code:`conda install -c conda-forge cloud_sptheme`
+
+:code:`conda install -c anaconda numpydoc`
+
+Once the environment is set up clone the git repo with the following command:
+
+:code:`git clone git@github.com:Naww137/ADAM.git`
+
+To install **ADAM**:
+
+:code:`conda install --offline /home/rrahman5/ADAM`
+
+:code:`conda develop .`
+
+To get the documentation, run the following from the directory where you cloned ADAM:
+
+:code:`sphinx-build -b html docs/source/ docs/build/html`
+
+:code:`cd docs/ && make html`
 
 Methodology
 -----------
