@@ -29,11 +29,12 @@ class Problem_Definition:
     def ADAM_Runtime_Parameters(self):
         self.write_output = True
         self.build_input = True
-        self.submit_job = False
+        self.submit_job = True
         # self.template_file = 'spent_fuel_cask_template.inp'
         # self.template_file = 'tsunami_template_file_10x10.inp'
-        # self.template_file = 'tsunami_template_file_44x44.inp'
-        self.template_file = 'tsunami_template_11x11.inp'
+        # self.template_file = 'tsunami_template_file_20x20_large.inp'
+        self.template_file = 'tsunami_template_file_44x44.inp'
+        # self.template_file = 'tsunami_template_11x11.inp'
         self.generations = 10
         self.temperature = 300
 
@@ -52,9 +53,9 @@ class Problem_Definition:
             parameter_df = pd.DataFrame()
             for i in range(self.max_parameters):
                 if i == 0:
-                    parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*-1.0
+                    parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*-0.2
                 else:
-                    parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*-6
+                    parameter_df[f'theta{i}'] = np.ones([self.number_of_pixels])*2
                 parameter_df[f'mt{i}'] = np.zeros([self.number_of_pixels])
                 parameter_df[f'vt{i}'] = np.zeros([self.number_of_pixels])
         else:
@@ -64,9 +65,10 @@ class Problem_Definition:
 
     def Geometry(self):
             
-        # self.number_of_pixels = 1936
+        self.number_of_pixels = 1936
+        # self.number_of_pixels = 400
         # self.number_of_pixels = 289
-        self.number_of_pixels = 121
+        # self.number_of_pixels = 121
 
         ### Define geometric regions (repeating regions in this case) and the materials present within each
         # self.region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
@@ -80,16 +82,20 @@ class Problem_Definition:
 
 
     def Material_Definition(self):
-        self.material_dict_base = {'fuel':{
+        self.material_dict_base = {
+                                
+                                'fuel':{
                                         'u-235':8.59435E-04,
                                         'u-238':2.23686E-02,
                                         'o-16':4.64708E-02},
                         
-                                'zircalloy':{'cr-52':6.98800E-05,
+                                'zircalloy':{'o-16' : 2.71200E-04,
+                                            'cr-52':6.98800E-05,
                                             'fe-56':1.42586E-04,
                                             'fe-58':4.38228E-07,
                                             'zr-94':7.37398E-03},
-                                # 'zircalloy':{'cr-50':3.62373E-06,
+                                # 'zircalloy':{'o-16' : 2.71200E-04,
+                                #         'cr-50':3.62373E-06,
                                 #         'cr-52':6.98800E-05,
                                 #         'cr-53':7.92383E-06,
                                 #         'cr-54':1.97241E-06,
@@ -117,6 +123,13 @@ class Problem_Definition:
                                             'o-16':3.3368E-02,
                                             'h-1':6.6733E-02} ,
 
+
+                                # 'fuel':{'u-234':5.0E-06,
+                                #         'u-235':5.41E-04,
+                                #         'u-236':2.0E-06,
+                                #         'u-238':1.7263E-02,
+                                #         'o-16':3.5622E-02},
+                                
                                 # fuelmodmix replicates concentrations from p2
                                 'fuelmodmix':{
                                             'u-234':5.0E-06*(1/4.4),
@@ -234,23 +247,30 @@ class Problem_Definition:
 
         ### put through derivative of objective function
 
-        # p3 original, exp transform with penalty
+        # p3 original, exp transform with penalty - Need to add Nbase
         # r = 100
         # v = 2
         # beta_limit = 20
         # obj_derivative_np = derivative_np - (-r*v*np.exp(-v*(beta_limit+parameter_np)) + r*v*np.exp(v*(parameter_np-beta_limit)))
 
-        # p3 with sigmoid and no penalty - currently ignoring contant Nbase that should be multiplied by the second derivative
-        # obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np)**2))
+        # p3 with sigmoid and no penalty
+        # obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2)
         
         # p2 with sigmoid and penalty for total mass
-        r = 100
-        v = 2
-        limit = 61
+        r = 1/100
+        v = 1
+        limit = 61*(4**2)
         M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
-        dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np)**2)
+        dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
         obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
 
+        # p2 inverse with sigmoid and penalty for k>=1
+        # r = 100
+        # v = 2
+        # limit = 61
+        # M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
+        # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
+        # obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
 
 
 
