@@ -35,7 +35,8 @@ class Problem_Definition:
 
         ### init material df
         self.material_df_base = pd.DataFrame(material_dict_base)
-
+        self.material_dict_base = material_dict_base
+        
         ### init other parameters
         self.template_file = template_filename
         self.generations = generations
