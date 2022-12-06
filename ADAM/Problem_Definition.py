@@ -36,7 +36,7 @@ class Problem_Definition:
         ### init material df
         self.material_df_base = pd.DataFrame(material_dict_base)
         self.material_dict_base = material_dict_base
-        
+
         ### init other parameters
         self.template_file = template_filename
         self.generations = generations
@@ -183,40 +183,12 @@ class Problem_Definition:
             Nbase.append(sum(Nbase_region[optimization_parameter]))
         Nbase_np = np.array([Nbase]*len(parameter_df))
 
-
         ### cast into numpy arrays
         derivative_np = np.array(derivative_df)
         parameter_np = np.array(parameter_df)
         
 
-        ### put through derivative of objective function
-
-        # p3 original, exp transform with penalty - Need to add Nbase
-        # r = 100
-        # v = 2
-        # beta_limit = 20
-        # obj_derivative_np = derivative_np - (-r*v*np.exp(-v*(beta_limit+parameter_np)) + r*v*np.exp(v*(parameter_np-beta_limit)))
-
-        # p3 with sigmoid and no penalty
-        # obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2)
-        
-        # p2 with sigmoid and penalty for total mass
-        # r = 1/100
-        # v = 1
-        # limit = 61*(4**2)
-        # M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
-        # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
-        # obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
-
-        # p2 inverse with sigmoid and penalty for k>=1
-        # r = 100
-        # v = 2
-        # limit = 61
-        # M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
-        # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
-        # obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
-
-
+        ### calculate obeject derivative using user passed function
         obj_derivative_np = self.obj_derivative(parameter_np, derivative_np, Nbase_np)
 
         ### put objective function derivatives into dataframe 
