@@ -211,8 +211,8 @@ def run(step, pixel_array, pdef, output_filepath):
             derivatives_wrt_parameters.append(each_pixel.derivatives_wrt_parameters)
         derivative_df = pd.DataFrame(derivatives_wrt_parameters)
         # chain rule for transformation function to get derivatives wrt optimization parameters (this is where the objective function enters)
-        obj_derivative_df = pdef.objective_derivative(derivative_df, parameter_df.filter(like='theta'))
-        
+        obj_derivative_df = pdef.objective_derivative(derivative_df, parameter_df.filter(like='theta'), keff)
+    
 
         ### Perform the ADAM update to get new parameters (remember, this is a minimization)
         parameter_df = ADAM_update_parameter_df(pdef, parameter_df, obj_derivative_df, step-1)
