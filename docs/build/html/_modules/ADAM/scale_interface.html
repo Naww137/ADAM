@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ADAM.scale_interface &#8212; ADAM 0.1 documentation</title>
+    <title>ADAM.scale_interface &#8212; ADAM 1.0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/cloud.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
@@ -49,7 +49,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">ADAM.scale_interface</a></li> 
@@ -121,6 +121,8 @@
 <span class="sd">    ----------</span>
 <span class="sd">    tsunami_file_string : string</span>
 <span class="sd">        Basename of the of the SCALE outfiles file to read.</span>
+<span class="sd">    pixel_array : object array</span>
+<span class="sd">        Array of pixel objects describing the problem geometry.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -172,52 +174,17 @@
             <span class="n">line_count</span> <span class="o">+=</span> <span class="mi">1</span>
 
 
-    <span class="c1">### Read output file to get atom densities and add absolute sensitivity to dicitonary</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">tsunami_file_string</span><span class="si">}</span><span class="s1">.out&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">in_mixing_table</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">in_mixture</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">line_count</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
-
-            <span class="k">if</span> <span class="s2">&quot;mixing table&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="n">in_mixing_table</span> <span class="o">=</span> <span class="kc">True</span>
-
-            <span class="k">if</span> <span class="n">in_mixing_table</span><span class="p">:</span>
-                <span class="k">if</span> <span class="s2">&quot;mixture = &quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                    <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                    <span class="n">mixture_id</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                    <span class="n">in_mixture</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">in_mixture_line_count</span> <span class="o">=</span> <span class="mi">0</span>
-                    <span class="k">continue</span>
-                <span class="k">if</span> <span class="n">in_mixture</span><span class="p">:</span>
-        
-                    <span class="k">if</span> <span class="n">in_mixture_line_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="k">pass</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">splitline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splitline</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                            <span class="n">in_mixture</span> <span class="o">=</span> <span class="kc">False</span>
-                            <span class="k">continue</span>
-
-                        <span class="n">isotope</span> <span class="o">=</span> <span class="n">splitline</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
-                        <span class="n">atom_density</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitline</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                        <span class="k">if</span> <span class="n">mixture_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mixture ID found in mixing table of .out but not in the SDF&quot;</span><span class="p">)</span>
-                        <span class="n">absolute_sensitivity</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">atom_density</span><span class="o">/</span><span class="n">keff</span>
-                        <span class="n">data</span><span class="p">[</span><span class="n">mixture_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">atom_density</span><span class="p">,</span> <span class="n">absolute_sensitivity</span><span class="p">])</span>
-
-                    <span class="n">in_mixture_line_count</span> <span class="o">+=</span> <span class="mi">1</span>
-                
-                <span class="k">if</span> <span class="s2">&quot;finished preparing the cross sections&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                    <span class="n">in_mixing_table</span> <span class="o">=</span> <span class="kc">False</span>
-
-
     <span class="c1">### Now put dictionary data from scale into pixels in pixel array</span>
     <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
         <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">region</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">region_definition</span><span class="p">):</span>
             <span class="n">scale_material_id</span> <span class="o">=</span> <span class="n">each_pixel</span><span class="o">.</span><span class="n">pixel_id</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="n">i</span>
+
+            <span class="c1"># scale relative sensitivities by atom_dens/keff</span>
+            <span class="k">for</span> <span class="n">isotope</span><span class="p">,</span> <span class="n">atom_dens</span> <span class="ow">in</span> <span class="n">each_pixel</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="n">region</span><span class="p">][</span><span class="s1">&#39;combined&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">updated_region_materials</span><span class="p">[</span><span class="n">region</span><span class="p">][</span><span class="s1">&#39;combined&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">absolute_sensitivity</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">scale_material_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">atom_dens</span><span class="o">/</span><span class="n">keff</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">scale_material_id</span><span class="p">][</span><span class="n">isotope</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">atom_dens</span><span class="p">,</span> <span class="n">absolute_sensitivity</span><span class="p">])</span>
+
             <span class="n">each_pixel</span><span class="o">.</span><span class="n">sensitivity_data_by_nuclide</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">scale_material_id</span><span class="p">]</span>
 
 
@@ -631,7 +598,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">ADAM.scale_interface</a></li> 

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Problem Definition &#8212; ADAM 0.1 documentation</title>
+    <title>Problem Definition &#8212; ADAM 1.0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/cloud.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
@@ -59,7 +59,7 @@
         <li class="right" >
           <a href="usage.html" title="How to Use The ADAM Project"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Problem Definition</a></li> 
       </ul>
@@ -74,39 +74,30 @@
             
   <section id="problem-definition">
 <h1>Problem Definition<a class="headerlink" href="#problem-definition" title="Permalink to this heading">¶</a></h1>
-<p id="id1">The Problem Defintion is an object that houses all information about the optimization problem being solved.
-The user must edit this file directly in order to change any of th attributes. Then upon running the algorithm (run_adam.py), the
-problem definition should be intialized and passed to the <a class="reference internal" href="source_api/ADAM_control_module.html#id1"><span class="std std-ref">ADAM Control Module</span></a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>While this file can be edited/replaced by a user generated file.py, the filename and attributes must be the same or the ADAM package will not find this information.</p>
-</div>
-<p>The information housed in the Problem Definition is separated into the following subsections:</p>
-<ul class="simple">
-<li><p>ADAM Gradient Descent runtime parameters</p></li>
-<li><p>System geometry and materials</p></li>
-<li><p>Objective &amp; Transformation Funtions</p></li>
-</ul>
-<p>The following secitons will cover each of these in detail, but a breif overview of the geometry setup is likely beneficial.</p>
-<section id="adam-runtime-parameters">
-<h2>ADAM Runtime Parameters<a class="headerlink" href="#adam-runtime-parameters" title="Permalink to this heading">¶</a></h2>
-<p>These parameters include user options as well as hyper parameters for the ADAM algorithm.</p>
+<p id="id1">The Problem Defintion is an object class in ADAM that houses all information about the optimization problem being solved.
+The user must instantiate this object and pass it to the <a class="reference internal" href="source_api/ADAM_control_module.html#id1"><span class="std std-ref">ADAM_control_module.run()</span></a>.  function in order to execute ADAM.
+An example of this is given in the run_adam.py example.</p>
+<section id="required-arguements">
+<h2>Required Arguements<a class="headerlink" href="#required-arguements" title="Permalink to this heading">¶</a></h2>
+<p>When instantiating the Problem Definition, the following arguements are required.
+The format for the material dictionary, region definition, and parameter definition are described further below in the Geometry &amp; Material Definition section.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="Problem_Definition.ADAM_Runtime_Parameters">
-<span class="sig-prename descclassname"><span class="pre">Problem_Definition.</span></span><span class="sig-name descname"><span class="pre">ADAM_Runtime_Parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Problem_Definition.ADAM_Runtime_Parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instantiates runtime attributes for the Problem_Definition objeect passed to ADAM.</p>
+<dt class="sig sig-object py" id="Problem_Definition.Problem_Definition">
+<span class="sig-prename descclassname"><span class="pre">Problem_Definition.</span></span><span class="sig-name descname"><span class="pre">Problem_Definition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Problem_Definition.Problem_Definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiates ADAM Problem Definition.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>write_output</strong> (<em>Boolean</em>) – Whether or not to write the variables to a csv with each step.</p></li>
-<li><p><strong>build_input</strong> (<em>Boolean</em>) – Whether or not to build a new input with each step.</p></li>
-<li><p><strong>template_file</strong> (<em>str</em>) – Filename (or full path if not in the same directory) to the MC solver template file.</p></li>
-<li><p><strong>generations</strong> (<em>int</em>) – Number of neutron generations to run for each MC solve.</p></li>
+<li><p><strong>template_filename</strong> (<em>str</em>) – Whether or not to write the variables to a csv with each step.</p></li>
+<li><p><strong>material_dict_base</strong> (<em>dictionary</em>) – Whether or not to build a new input with each step.</p></li>
+<li><p><strong>number_of_pixels</strong> (<em>int</em>) – Filename (or full path if not in the same directory) to the MC solver template file.</p></li>
+<li><p><strong>region_definition</strong> (<em>dictionary</em>) – Number of neutron generations to run for each MC solve.</p></li>
+<li><p><strong>parameter_definition</strong> (<em>dictionary</em>) – Temperature of the material pixels in the system.</p></li>
+<li><p><strong>initial_parameter_df</strong> (<em>DataFrame</em>) – Initial optimization parameters.</p></li>
+<li><p><strong>generations</strong> (<em>int</em>) – MC transport generations to run per solve.</p></li>
 <li><p><strong>temperature</strong> (<em>int</em><em> or </em><em>float</em>) – Temperature of the material pixels in the system.</p></li>
-<li><p><strong>beta_1</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
-<li><p><strong>beta_2</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
-<li><p><strong>alpha_value</strong> (<em>float</em>) – Hyper parameter of the ADAM algorithm.</p></li>
+<li><p><strong>transformation</strong> (<em>func</em>) – Tranformation function for optimization parameters.</p></li>
+<li><p><strong>obj_derivative</strong> (<em>function</em>) – Objective derivative function.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -118,6 +109,23 @@ problem definition should be intialized and passed to the <a class="reference in
 </dl>
 </dd></dl>
 
+</section>
+<section id="options-adam-runtime-parameters">
+<h2>Options ADAM Runtime Parameters<a class="headerlink" href="#options-adam-runtime-parameters" title="Permalink to this heading">¶</a></h2>
+<p>When instantiating the problem definition object, the user has the option to pass in a key-word arguement for ADAM_Runtime_Parameters.
+This is a dictionary with intuitively named options as seen below.
+You can pass a dictionary with any or all of the options below and those given will replace the default.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">ADAM_Runtime_Parameters_default = {     &#39;Write Output&#39;          :   True,</span>
+<span class="go">                                        &#39;Build Input&#39;           :   True,</span>
+<span class="go">                                        &#39;Submit Job&#39;            :   True,</span>
+<span class="go">                                        &#39;Run Geometry Check&#39;    :   False,</span>
+
+<span class="go">                                        &#39;beta 1&#39;    :   0.9,</span>
+<span class="go">                                        &#39;beta 2&#39;    :   0.999,</span>
+<span class="go">                                        &#39;epsilon&#39;   :   1e-8,</span>
+<span class="go">                                        &#39;alpha&#39;     :   1e-3             }</span>
+</pre></div>
+</div>
 </section>
 <section id="geometry-material-definition">
 <h2>Geometry &amp; Material Definition<a class="headerlink" href="#geometry-material-definition" title="Permalink to this heading">¶</a></h2>
@@ -180,7 +188,8 @@ base*trans(theta).</p>
     <h3><a href="index.html">Page contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">Problem Definition</a><ul>
-<li><a class="reference internal" href="#adam-runtime-parameters">ADAM Runtime Parameters</a></li>
+<li><a class="reference internal" href="#required-arguements">Required Arguements</a></li>
+<li><a class="reference internal" href="#options-adam-runtime-parameters">Options ADAM Runtime Parameters</a></li>
 <li><a class="reference internal" href="#geometry-material-definition">Geometry &amp; Material Definition</a></li>
 <li><a class="reference internal" href="#objective-transformation-funtions">Objective &amp; Transformation Funtions</a></li>
 </ul>
@@ -253,7 +262,7 @@ base*trans(theta).</p>
         <li class="right" >
           <a href="usage.html" title="How to Use The ADAM Project"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Problem Definition</a></li> 
       </ul>

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>ADAM Control Module &#8212; ADAM 0.1 documentation</title>
+    <title>ADAM Control Module &#8212; ADAM 1.0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/cloud.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
@@ -58,7 +58,7 @@
         <li class="right" >
           <a href="index.html" title="Source API"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Source API</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">ADAM Control Module</a></li> 
@@ -76,6 +76,38 @@
 <h1>ADAM Control Module<a class="headerlink" href="#adam-control-module" title="Permalink to this heading">¶</a></h1>
 <p>This is the primary control module for the ADAM algorithm, all other modules/functions are called from this control module.</p>
 <span class="target" id="module-ADAM.ADAM_control_Module"><span id="id1"></span></span><dl class="py function">
+<dt class="sig sig-object py" id="ADAM.ADAM_control_Module.ADAM_update_parameter_df">
+<span class="sig-prename descclassname"><span class="pre">ADAM.ADAM_control_Module.</span></span><span class="sig-name descname"><span class="pre">ADAM_update_parameter_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_derivative_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/ADAM_control_Module.html#ADAM_update_parameter_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.ADAM_control_Module.ADAM_update_parameter_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the ADAM update on the optimization parameters.</p>
+<p>The parameter_df variable is a panda DataFrame that holds all of the ADAM variables, that is:
+theta   :   optimization parameters
+mt    :   first moment
+vt    :   second moment
+Each of the above ADAM variables is housed in a vector with respect to each pixel.
+Often it is the case that a single pixel will have multiple optimization parameters applied to different materials within it.
+In such a case, the ADAM variables become indexed vectors where the index in the data frame indicates which material that parameter will be
+applied to and the location in the vector indicates the geometric location of that pixel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pdef</strong> (<em>_type_</em>) – _description_</p></li>
+<li><p><strong>obj_derivative_df</strong> (<em>_type_</em>) – _description_</p></li>
+<li><p><strong>step</strong> (<em>_type_</em>) – _description_</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>_type_</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – _description_</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="ADAM.ADAM_control_Module.Create_New_Input">
 <span class="sig-prename descclassname"><span class="pre">ADAM.ADAM_control_Module.</span></span><span class="sig-name descname"><span class="pre">Create_New_Input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixel_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/ADAM_control_Module.html#Create_New_Input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.ADAM_control_Module.Create_New_Input" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a new MC Transport run file.</p>
@@ -98,18 +130,9 @@ This function follows the following steps:
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="ADAM.ADAM_control_Module.update">
-<span class="sig-prename descclassname"><span class="pre">ADAM.ADAM_control_Module.</span></span><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdef</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/ADAM_control_Module.html#update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.ADAM_control_Module.update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs the ADAM gradient descent update on the optimization parameters.</p>
-<p>This is the primary control function for the algorithm.</p>
-<p>The parameter_df variable is a panda DataFrame that holds all of the ADAM variables, that is:
-theta   :   optimization parameters
-mt    :   first moment
-vt    :   second moment
-Each of the above ADAM variables is housed in a vector with respect to each pixel.
-Often it is the case that a single pixel will have multiple optimization parameters applied to different materials within it.
-In such a case, the ADAM variables become indexed vectors where the index in the data frame indicates which material that parameter will be
-applied to and the location in the vector indicates the geometric location of that pixel.</p>
+<dt class="sig sig-object py" id="ADAM.ADAM_control_Module.run">
+<span class="sig-prename descclassname"><span class="pre">ADAM.ADAM_control_Module.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ADAM/ADAM_control_Module.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ADAM.ADAM_control_Module.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the primary control function for the ADAM algorithm.</p>
 <p>The parameter_df variable is defined from the previous step (or from the problem definition if on step 1).
 Then that sensitivities are read from the MC transport/sensitivity calculation and converted to derivatives
 with respect to the optimization parameters. The ADAM update is performed and the new parameters are saved.
@@ -199,7 +222,7 @@ Finally, a new set of MC transport/sensitivity input files is created.</p>
         <li class="right" >
           <a href="index.html" title="Source API"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >Source API</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">ADAM Control Module</a></li> 

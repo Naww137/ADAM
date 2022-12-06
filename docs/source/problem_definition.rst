@@ -3,53 +3,66 @@ Problem Definition
 
 .. _problem_definition:
 
-The Problem Defintion is an object that houses all information about the optimization problem being solved.
-The user must edit this file directly in order to change any of th attributes. Then upon running the algorithm (run_adam.py), the 
-problem definition should be intialized and passed to the :ref:`ADAM Control Module <ADAM_control_module>`. 
+The Problem Defintion is an object class in ADAM that houses all information about the optimization problem being solved.
+The user must instantiate this object and pass it to the :ref:`ADAM_control_module.run() <ADAM_control_module>`.  function in order to execute ADAM. 
+An example of this is given in the run_adam.py example.
 
-.. note::
-    While this file can be edited/replaced by a user generated file.py, the filename and attributes must be the same or the ADAM package will not find this information.
+Required Arguements
+-------------------
 
-The information housed in the Problem Definition is separated into the following subsections:
+When instantiating the Problem Definition, the following arguements are required. 
+The format for the material dictionary, region definition, and parameter definition are described further below in the Geometry & Material Definition section.
 
-* ADAM Gradient Descent runtime parameters
-* System geometry and materials
-* Objective & Transformation Funtions
+.. py:function:: Problem_Definition.Problem_Definition()
 
-The following secitons will cover each of these in detail, but a breif overview of the geometry setup is likely beneficial. 
+        Instantiates ADAM Problem Definition.
+
+        :param template_filename: Whether or not to write the variables to a csv with each step.
+        :type template_filename: str
+        :param material_dict_base: Whether or not to build a new input with each step.
+        :type material_dict_base: dictionary
+        :param number_of_pixels: Filename (or full path if not in the same directory) to the MC solver template file.
+        :type number_of_pixels: int
+        :param region_definition: Number of neutron generations to run for each MC solve.
+        :type region_definition: dictionary
+        :param parameter_definition: Temperature of the material pixels in the system.
+        :type parameter_definition: dictionary
+        :param initial_parameter_df: Initial optimization parameters.
+        :type initial_parameter_df: DataFrame
+
+        :param generations: MC transport generations to run per solve.
+        :type generations: int
+        :param temperature: Temperature of the material pixels in the system.
+        :type temperature: int or float
+
+        :param transformation: Tranformation function for optimization parameters.
+        :type transformation: func
+        :param obj_derivative: Objective derivative function.
+        :type obj_derivative: function
+
+        :return: None - instantiates object attributes.
+        :rtype: None
 
 
-ADAM Runtime Parameters
------------------------
 
-These parameters include user options as well as hyper parameters for the ADAM algorithm. 
+Options ADAM Runtime Parameters
+-------------------------------
 
-.. py:function:: Problem_Definition.ADAM_Runtime_Parameters()
+When instantiating the problem definition object, the user has the option to pass in a key-word arguement for ADAM_Runtime_Parameters.
+This is a dictionary with intuitively named options as seen below. 
+You can pass a dictionary with any or all of the options below and those given will replace the default.
 
-   Instantiates runtime attributes for the Problem_Definition objeect passed to ADAM.
-   
-   :param write_output: Whether or not to write the variables to a csv with each step.
-   :type write_output: Boolean
-   :param build_input: Whether or not to build a new input with each step.
-   :type build_input: Boolean
-   :param template_file: Filename (or full path if not in the same directory) to the MC solver template file.
-   :type template_file: str
-   :param generations: Number of neutron generations to run for each MC solve.
-   :type generations: int
-   :param temperature: Temperature of the material pixels in the system.
-   :type temperature: int or float
+.. code:: console
 
-   :param beta_1: Hyper parameter of the ADAM algorithm.
-   :type beta_1: float
-   :param beta_2: Hyper parameter of the ADAM algorithm.
-   :type beta_2: float
-   :param epsilon: Hyper parameter of the ADAM algorithm.
-   :type epsilon: float
-   :param alpha_value: Hyper parameter of the ADAM algorithm.
-   :type alpha_value: float
+        ADAM_Runtime_Parameters_default = {     'Write Output'          :   True, 
+                                                'Build Input'           :   True, 
+                                                'Submit Job'            :   True,
+                                                'Run Geometry Check'    :   False,
 
-   :return: None - instantiates object attributes.
-   :rtype: None
+                                                'beta 1'    :   0.9, 
+                                                'beta 2'    :   0.999,
+                                                'epsilon'   :   1e-8,
+                                                'alpha'     :   1e-3             } 
 
 
 Geometry & Material Definition
