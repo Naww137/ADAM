@@ -7,10 +7,10 @@ The Problem Defintion is an object class in ADAM that houses all information abo
 The user must instantiate this object and pass it to the :ref:`ADAM_control_module.run() <ADAM_control_module>`.  function in order to execute ADAM. 
 An example of this is given in the run_adam.py example.
 
-Required Arguements
+Required Arguments
 -------------------
 
-When instantiating the Problem Definition, the following arguements are required. 
+When instantiating the Problem Definition, the following arguments are required. 
 The format for the material dictionary, region definition, and parameter definition are described further below in the Geometry & Material Definition section.
 
 .. py:function:: Problem_Definition.Problem_Definition()
@@ -48,7 +48,7 @@ The format for the material dictionary, region definition, and parameter definit
 Options ADAM Runtime Parameters
 -------------------------------
 
-When instantiating the problem definition object, the user has the option to pass in a key-word arguement for ADAM_Runtime_Parameters.
+When instantiating the problem definition object, the user has the option to pass in a key-word argument for ADAM_Runtime_Parameters.
 This is a dictionary with intuitively named options as seen below. 
 You can pass a dictionary with any or all of the options below and those given will replace the default.
 
