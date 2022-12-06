@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>How to Use The ADAM Project &#8212; ADAM 0.1 documentation</title>
+    <title>How to Use The ADAM Project &#8212; ADAM 1.0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/cloud.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
@@ -58,7 +58,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to The ADAM Project’s documentation!"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">How to Use The ADAM Project</a></li> 
       </ul>
@@ -77,7 +77,7 @@
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
 <p>To use <strong>ADAM</strong>, you can install install it using pip:</p>
 <p><code class="code docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://github.com/Naww137/ADAM</span></code></p>
-<p>If a new version of ADAM has been release, you can update ADAM by running:</p>
+<p>If a new version of ADAM has been released, you can update ADAM by running:</p>
 <p><code class="code docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--upgrade</span> <span class="pre">git+https://github.com/Naww137/ADAM</span></code></p>
 <p>If you would like to run in <a class="reference external" href="https://setuptools.pypa.io/en/latest/userguide/development_mode.html">development mode</a>, install using:</p>
 <p><code class="code docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span></code></p>
@@ -106,43 +106,73 @@ The current execution of this process is done using the Department of Nuclear En
 The current MC solver being used is the SCALE TSUNAMI sequence developed at <a class="reference external" href="https://www.ornl.gov/scale">Oak Ridge National Laboratory</a>.
 While access to both the UTK NE cluster and SCALE are restricted, this project is structured such that these parts are interchangeable.
 It is likely more intuitive to learn the stucture of this project before discussing how to run on a different machine or with a different MC solver.</p>
-<p>In order to run ADAM, the user must supply 4 files. All of these files must be in the directory you wish to run ADAM from.</p>
+<p>In order to run ADAM, the user must supply 3 files in the directory where ADAM will run.</p>
 <ol class="arabic">
 <li><p>run_adam.py</p>
-<p>This is a short script that executes the algorithm at the highest level.</p>
-<p>The purpose of this script is twofold. First it imports the ADAM package and instantiates the Problem Definition object and pixel array (discussed later).
-Second, this script loops through a specified number of steps or until a stopping criteria. With each loop, the
-<a class="reference internal" href="source_api/cluster_interface.html#id1"><span class="std std-ref">UTK NE Cluster Interface Module</span></a> of ADAM is called to run the MC solver and wait for it to complete, then the
-<a class="reference internal" href="source_api/ADAM_control_module.html#id1"><span class="std std-ref">ADAM Control Module</span></a> is called to read the output and update the parameters. What this script may look like is the following:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>Import ADAM modules
-<span class="go">from ADAM import ADAM_control_module</span>
-<span class="go">from ADAM import pixel</span>
-<span class="go">import Problem_Definition</span>
-<span class="go">from ADAM import cluster_interface</span>
-<span class="gp"># </span>Instantiate problem defintion object
-<span class="go">run_geometry_check = False</span>
-<span class="go">pdef = Problem_Definition.Problem_Definition(True,run_geometry_check)</span>
-<span class="gp"># </span>Instantiate pixel array
-<span class="go">pixel_array = []</span>
-<span class="go">for i in range(pdef.number_of_pixels):</span>
-<span class="go">   pixel_array.append(pixel.pixel(pdef.region_definition, pdef.parameter_definition, pdef.material_df_base, i+1, pdef.temperature))</span>
-<span class="gp"># </span>Run ADAM
-<span class="go">step = 1</span>
-<span class="go">while step &lt; 5:</span>
-<span class="go">   ADAM_control_module.update(step, pixel_array, pdef)</span>
-<span class="go">   cluster_interface.submit_jobs_to_necluster(&#39;tsunami_job&#39;)</span>
-<span class="go">   cluster_interface.wait_on_submitted_job(&#39;tsunami_job&#39;)</span>
-<span class="go">   step += 1</span>
+<p>This is the python script that actually executes the ADAM code.</p>
+<p>First, the user will define all of the problem parameters for runtime.
+This include geometry/material definitions, transformation function and objeective function derivatives, hyperparameters, and more.
+These parameters are passed to the problem_definition module in ADAM, the appropiate input formats are discussed in the <cite>Problem Definition &lt;problem_definition&gt;</cite> section of this documentation.
+After defining all start parameters, the run method of the <cite>ADAM Control Module &lt;ADAM_control_module&gt;</cite> is used to execute each step of the gradient descent.
+This loop can be for a determined number of steps, or until some user defined stopping criteria.
+What this script may look like is the following:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span># Import ADAM modules
+from ADAM import ADAM_control_module
+from ADAM import pixel
+import Problem_Definition
+from ADAM import cluster_interface
+
+# TODO: Define geometry and materials
+# TODO: Define initial parameters
+# TODO: Define transformation and objective function derivative
+# More information about the format for the above TODO&#39;s can be found in
+# the Problem Definition section of this documentation or
+# in the example run_adam.py script distributed with ADAM
+
+
+# Define optional ADAM runtime parameters and initialize a problem definition object
+options = { &#39;Write Output&#39;  :   True }
+pdef = Problem_Definition.Problem_Definition(&#39;tsunami_template_11x11.inp&#39;,
+                                                material_dict_base,
+                                                number_of_pixels,
+                                                region_definition,
+                                                parameter_definition,
+                                                10, 300,
+                                                initial_parameter_df,
+
+                                                transformation_function,
+                                                obj_derivative,
+
+                                                ADAM_Runtime_Parameters = options)
+
+# Define path to runtime output file
+output_filepath = os.path.join(os.getcwd(), &quot;run_adam.outfile&quot;)
+
+# Initialize pixel array
+pixel_array = []
+for i in range(pdef.number_of_pixels):
+   pixel_array.append(pixel.pixel(pdef.region_definition, pdef.parameter_definition, pdef.material_df_base, i+1, pdef.temperature))
+
+# Input starting step
+step = 1
+if step == 1:
+   with open(output_filepath, &#39;w&#39;) as f:
+      f.write(&quot;Welcome to ADAM!\nYou have just started running, this file will print updates for each step\n&quot;)
+else:
+   with open(output_filepath, &#39;a&#39;) as f:
+      f.write(f&quot;ADAM was interrupted, retarting from step {step}\n&quot;)
+
+
+### Run ADAM
+while step &lt; 600:
+
+   keff = ADAM_control_module.run(step, pixel_array, pdef, output_filepath)
+
+   step += 1
 </pre></div>
 </div>
-<p>Here is where one could make edits in order to change the machine that the MC solver is running on, i.e. rather than running the cluster_interface module that is specific
+<p>Within the ADAM Control Module is where one could make edits in order to change the machine that the MC solver is running on, i.e. rather than running the cluster_interface module that is specific
 to the UTK NE Cluster, one could create their own module to interface with a machine of their choise.
-This script is not a part of the ADAM package, however, an example is included in the cloned repository.</p>
-</li>
-<li><p><a class="reference internal" href="problem_definition.html#id1"><span class="std std-ref">Problem_Definition.py</span></a></p>
-<p>This file is a python class that houses information about the materials, geometery, optimization parameters, objective function, and ADAM hyperparameters.
-This information is instantiated with the run_adam.py script, then passed to the ADAM Control Module.
-This is the primary control for the problem setup, see the <a class="reference internal" href="problem_definition.html#id1"><span class="std std-ref">documentation</span></a> on this object to learn how to define a problem.
 This script is not a part of the ADAM package, however, an example is included in the cloned repository.</p>
 </li>
 <li><p>The template file</p>
@@ -164,14 +194,6 @@ to a job management system that will send it to a particular computing node. Thi
 in the distribution of ADAM.</p>
 </li>
 </ol>
-<p>The <a class="reference internal" href="source_api/ADAM_control_module.html#id1"><span class="std std-ref">ADAM Control Module</span></a> is considered the primary control module for the algorithm.
-This module is called to update the parameters for each step of the gradient descent. This is seen in the code snipet above for the run_adam.py script.
-The update function within this module will do the following:
-* Read the previous step’s (or starting) parameters
-* Perform the ADAM update to parameters
-* Write the new parameters to a csv file in ./parameter_data
-* Create a new MC solver input file
-Then, as seen in the code snippet, a module is called to run and wait on that MC solution.</p>
 </section>
 </section>
 
@@ -258,7 +280,7 @@ Then, as seen in the code snippet, a module is called to run and wait on that MC
         <li class="right" >
           <a href="index.html" title="Welcome to The ADAM Project’s documentation!"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">How to Use The ADAM Project</a></li> 
       </ul>

@@ -21,7 +21,7 @@ Contents
 --------
 
 .. toctree::
-   :caption: Cntents:
+   :caption: Contents:
 
    usage
    problem_definition

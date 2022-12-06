@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ADAM.ADAM_control_Module &#8212; ADAM 0.1 documentation</title>
+    <title>ADAM.ADAM_control_Module &#8212; ADAM 1.0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/cloud.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
@@ -49,7 +49,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">ADAM.ADAM_control_Module</a></li> 
@@ -71,6 +71,8 @@
 <span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">ADAM</span> <span class="kn">import</span> <span class="n">scale_interface</span>
+<span class="kn">from</span> <span class="nn">ADAM</span> <span class="kn">import</span> <span class="n">cluster_interface</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
 
 
 <span class="c1">#%%</span>
@@ -106,7 +108,6 @@
         <span class="n">pixel_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">apply_density_factors</span><span class="p">(</span><span class="n">density_factor_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>    
     
     <span class="c1">### Building scale input</span>
-    
     <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">build_input</span><span class="p">:</span>
 
         <span class="c1"># generate random number seed</span>
@@ -132,20 +133,11 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipping building scale input file.&quot;</span><span class="p">)</span></div>
 
 
+<span class="c1">#%%</span>
 
-
-<span class="c1">#%% initialize pixel array</span>
-
-
-
-
-<span class="c1">#%%%</span>
-
-<div class="viewcode-block" id="update"><a class="viewcode-back" href="../../source_api/ADAM_control_module.html#ADAM.ADAM_control_Module.update">[docs]</a><span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">,</span> <span class="n">pdef</span><span class="p">):</span>
+<div class="viewcode-block" id="ADAM_update_parameter_df"><a class="viewcode-back" href="../../source_api/ADAM_control_module.html#ADAM.ADAM_control_Module.ADAM_update_parameter_df">[docs]</a><span class="k">def</span> <span class="nf">ADAM_update_parameter_df</span><span class="p">(</span><span class="n">pdef</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">obj_derivative_df</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Performs the ADAM gradient descent update on the optimization parameters.</span>
-
-<span class="sd">    This is the primary control function for the algorithm. </span>
+<span class="sd">    Performs the ADAM update on the optimization parameters.</span>
 
 <span class="sd">    The parameter_df variable is a panda DataFrame that holds all of the ADAM variables, that is:</span>
 <span class="sd">    theta   :   optimization parameters</span>
@@ -155,6 +147,62 @@
 <span class="sd">    Often it is the case that a single pixel will have multiple optimization parameters applied to different materials within it.</span>
 <span class="sd">    In such a case, the ADAM variables become indexed vectors where the index in the data frame indicates which material that parameter will be</span>
 <span class="sd">    applied to and the location in the vector indicates the geometric location of that pixel.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdef : _type_</span>
+<span class="sd">        _description_</span>
+<span class="sd">    obj_derivative_df : _type_</span>
+<span class="sd">        _description_</span>
+<span class="sd">    step : _type_</span>
+<span class="sd">        _description_</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    _type_</span>
+<span class="sd">        _description_</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">))</span>
+    <span class="n">dObj_dtheta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj_derivative_df</span><span class="p">)</span>
+    <span class="n">mt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;mt&#39;</span><span class="p">))</span>
+    <span class="n">vt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;vt&#39;</span><span class="p">))</span>
+
+    <span class="n">mt_next</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span> <span class="o">*</span> <span class="n">mt</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dObj_dtheta</span><span class="p">)</span>
+    <span class="n">vt_next</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span> <span class="o">*</span> <span class="n">vt</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">dObj_dtheta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> 
+    <span class="n">mt_next_hat</span> <span class="o">=</span> <span class="p">(</span><span class="n">mt_next</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span><span class="o">**</span><span class="n">step</span><span class="p">))</span>
+    <span class="n">vt_next_hat</span> <span class="o">=</span> <span class="p">(</span><span class="n">vt_next</span><span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span><span class="o">**</span><span class="n">step</span><span class="p">))</span>
+    
+    <span class="n">new_theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">alpha_value</span> <span class="o">*</span> <span class="n">mt_next_hat</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vt_next_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">pdef</span><span class="o">.</span><span class="n">epsilon</span><span class="p">))</span>
+
+    <span class="c1"># check for any NaNs</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">new_theta</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;NaN in new_theta, step </span><span class="si">{step}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1">### Redefine and write parameter dataframe</span>
+    <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">max_parameters</span><span class="p">):</span>
+        <span class="n">temporary_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="sa">f</span><span class="s1">&#39;theta</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">new_theta</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                        <span class="sa">f</span><span class="s1">&#39;mt</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">mt_next</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                        <span class="sa">f</span><span class="s1">&#39;vt</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">vt_next</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]})</span>
+        <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">parameter_df</span><span class="p">,</span><span class="n">temporary_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parameter_df</span></div>
+
+
+
+
+<span class="c1">#%%%</span>
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../source_api/ADAM_control_module.html#ADAM.ADAM_control_Module.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">,</span> <span class="n">pdef</span><span class="p">,</span> <span class="n">output_filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the primary control function for the ADAM algorithm.</span>
 <span class="sd">    </span>
 <span class="sd">    The parameter_df variable is defined from the previous step (or from the problem definition if on step 1). </span>
 <span class="sd">    Then that sensitivities are read from the MC transport/sensitivity calculation and converted to derivatives</span>
@@ -172,105 +220,80 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="c1"># If we are at step 1:</span>
-                <span class="c1"># parameter_df = initial parameters given by user</span>
-                <span class="c1"># create csv files to save data</span>
-                <span class="c1"># do not read sensitivities from output files</span>
-
+        <span class="c1">### If we are at step 1: parameter_df = initial parameters given by user</span>
         <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pdef</span><span class="o">.</span><span class="n">parameter_df</span>
-
+        <span class="c1">### Write output for starting step</span>
         <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">write_output</span><span class="p">:</span>
-
-            <span class="c1"># if os.path.isdir(&#39;parameter_data&#39;):</span>
-            <span class="c1">#     os.rmdir(&#39;parameter_data&#39;)</span>
-            <span class="c1">#     os.mkdir(&#39;parameter_data&#39;)</span>
-            <span class="c1"># else:</span>
-            <span class="c1">#     os.mkdir(&#39;parameter_data&#39;)</span>
-
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">):</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;parameter_data/output.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file</span><span class="p">:</span>
                 <span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;step, keff</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-
             <span class="n">parameter_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="c1">### Create a new input file</span>
-        <span class="n">Create_New_Input</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">pdef</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-
+            <span class="n">keff</span><span class="o">=</span><span class="mi">0</span>
 
     <span class="k">else</span><span class="p">:</span>
-
-
+        <span class="c1"># If at step &gt; 1:</span>
+        <span class="c1"># Check for parameter data directory</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;parameter_data&#39;</span><span class="p">):</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Starting from step&gt;1 but no parameter_data is present. Cannot find directory parameter_data/&quot;</span><span class="p">)</span>
-
-        <span class="c1">### Read parameters from previous step</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Step&gt;1 but no parameter_data is present. Cannot find directory parameter_data/&quot;</span><span class="p">)</span>
+        <span class="c1"># Read parameters from previous step</span>
         <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">)</span>
-        
 
 
-        <span class="c1">### Pull out keff and sensitivities from previous job</span>
-        <span class="n">solver_file_basename</span> <span class="o">=</span> <span class="s1">&#39;tsunami_job&#39;</span>
-        <span class="c1">#!!! if file does not exist throw error</span>
+        <span class="c1">### Create a new MC input file</span>
+        <span class="n">Create_New_Input</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">pdef</span><span class="p">,</span> <span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
+
+        <span class="c1">### Run the MC simulation</span>
+        <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">submit_job</span><span class="p">:</span>
+            <span class="n">cluster_interface</span><span class="o">.</span><span class="n">submit_jobs_to_necluster</span><span class="p">(</span><span class="s1">&#39;tsunami_job&#39;</span><span class="p">)</span>
+            <span class="n">cluster_interface</span><span class="o">.</span><span class="n">wait_on_submitted_job</span><span class="p">(</span><span class="s1">&#39;tsunami_job&#39;</span><span class="p">,</span> <span class="n">output_filepath</span><span class="p">)</span>
+            <span class="n">cluster_interface</span><span class="o">.</span><span class="n">remove_unwanted_files</span><span class="p">()</span>
+
+
+        <span class="c1">### Read output of MC simulation</span>
         <span class="c1"># outputs keff and writes derivative dfs to each respective pixel</span>
         <span class="c1"># derivatives are absolute but wrt to each nuclide within each region</span>
         <span class="n">keff</span> <span class="o">=</span> <span class="n">scale_interface</span><span class="o">.</span><span class="n">read_total_sensitivity_by_nuclide</span><span class="p">(</span><span class="s2">&quot;tsunami_job&quot;</span><span class="p">,</span> <span class="n">pixel_array</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_filepath</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">keff</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
-        <span class="c1"># combine derivatives wrt nuclides in each region to get derivatives wrt multiplication factors for the entire region (chain rule)</span>
+        <span class="c1">### if output is not correct, re-run</span>
+
+
+        <span class="c1">### Combine derivatives to get them wrt optimization parameters</span>
+        <span class="c1"># wrt nuclides and region combined to derivatives wrt multiplication factors applied to compound for the entire region (chain rule)</span>
         <span class="n">derivatives_wrt_parameters</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">each_pixel</span> <span class="ow">in</span> <span class="n">pixel_array</span><span class="p">:</span>
             <span class="n">each_pixel</span><span class="o">.</span><span class="n">combine_derivatives_wrt_nuclides</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">material_dict_base</span><span class="p">)</span>
             <span class="n">each_pixel</span><span class="o">.</span><span class="n">combine_region_derivatives</span><span class="p">()</span>
             <span class="n">derivatives_wrt_parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">each_pixel</span><span class="o">.</span><span class="n">derivatives_wrt_parameters</span><span class="p">)</span>
         <span class="n">derivative_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">derivatives_wrt_parameters</span><span class="p">)</span>
-        
-        <span class="c1"># chain rule for transformation function to get derivatives wrt optimization parameters</span>
-        <span class="n">obj_derivative_df</span> <span class="o">=</span> <span class="n">pdef</span><span class="o">.</span><span class="n">objective_derivative</span><span class="p">(</span><span class="n">derivative_df</span><span class="p">,</span> <span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">))</span>
-        
+        <span class="c1"># chain rule for transformation function to get derivatives wrt optimization parameters (this is where the objective function enters)</span>
+        <span class="n">obj_derivative_df</span> <span class="o">=</span> <span class="n">pdef</span><span class="o">.</span><span class="n">objective_derivative</span><span class="p">(</span><span class="n">derivative_df</span><span class="p">,</span> <span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">),</span> <span class="n">keff</span><span class="p">)</span>
+    
 
-        <span class="c1">### perform the ADAM algorithm update (remember, this is a minimization)</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">))</span>
-        <span class="n">dObj_dtheta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj_derivative_df</span><span class="p">)</span>
-        <span class="n">mt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;mt&#39;</span><span class="p">))</span>
-        <span class="n">vt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parameter_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s1">&#39;vt&#39;</span><span class="p">))</span>
+        <span class="c1">### Perform the ADAM update to get new parameters (remember, this is a minimization)</span>
+        <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">ADAM_update_parameter_df</span><span class="p">(</span><span class="n">pdef</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">obj_derivative_df</span><span class="p">,</span> <span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">mt_next</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span> <span class="o">*</span> <span class="n">mt</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dObj_dtheta</span><span class="p">)</span>
-        <span class="n">vt_next</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span> <span class="o">*</span> <span class="n">vt</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">dObj_dtheta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> 
-        <span class="n">mt_next_hat</span> <span class="o">=</span> <span class="p">(</span><span class="n">mt_next</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_1</span><span class="o">**</span><span class="n">step</span><span class="p">))</span>
-        <span class="n">vt_next_hat</span> <span class="o">=</span> <span class="p">(</span><span class="n">vt_next</span><span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdef</span><span class="o">.</span><span class="n">beta_2</span><span class="o">**</span><span class="n">step</span><span class="p">))</span>
-        
-        <span class="n">new_theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">alpha_value</span> <span class="o">*</span> <span class="n">mt_next_hat</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vt_next_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">pdef</span><span class="o">.</span><span class="n">epsilon</span><span class="p">))</span>
-
-
-        <span class="c1"># check for any NaNs</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">new_theta</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;NaN in new_theta, step </span><span class="si">{step}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-
-        <span class="c1"># redefine parameter dataframe</span>
-        <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pdef</span><span class="o">.</span><span class="n">max_parameters</span><span class="p">):</span>
-            <span class="n">temporary_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="sa">f</span><span class="s1">&#39;theta</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">new_theta</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                            <span class="sa">f</span><span class="s1">&#39;mt</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">mt_next</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                            <span class="sa">f</span><span class="s1">&#39;vt</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>   <span class="n">vt_next</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]})</span>
-            <span class="n">parameter_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">parameter_df</span><span class="p">,</span><span class="n">temporary_df</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-
-        <span class="c1">### Save new parameters</span>
+        <span class="c1"># write new parameters</span>
         <span class="k">if</span> <span class="n">pdef</span><span class="o">.</span><span class="n">write_output</span><span class="p">:</span>
             <span class="n">parameter_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;parameter_data/parameters_</span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s1">.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;parameter_data/output.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file</span><span class="p">:</span>
-                    <span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">keff</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">step</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">keff</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1">### Create a new input file</span>
-        <span class="n">Create_New_Input</span><span class="p">(</span><span class="n">pixel_array</span><span class="p">,</span> <span class="n">parameter_df</span><span class="p">,</span> <span class="n">pdef</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">keff</span></div>
 
     
 
-<span class="c1"># %%</span>
+<span class="c1">#%%</span>
 </pre></div>
 
             <div class="clearer"></div>
@@ -321,7 +344,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> &nbsp; &nbsp;</li>
-    <li><a href="../../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">ADAM.ADAM_control_Module</a></li> 

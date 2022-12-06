@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>SCALE Interface &#8212; ADAM 0.1 documentation</title>
+    <title>SCALE Interface &#8212; ADAM 1.0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/cloud.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noticia+Text:400,i,b,bi|Open+Sans:400,i,b,bi|Roboto+Mono:400,i,b,bi&amp;display=swap" type="text/css" />
@@ -58,7 +58,7 @@
         <li class="right" >
           <a href="pixel.html" title="Pixel"
              accesskey="P">previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Source API</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SCALE Interface</a></li> 
@@ -210,7 +210,10 @@ correctly. See the old function “read_total_sensitivity_by_nuclide_OUTPUTFILEO
 Perhaps the TSUNAMI bug will be fixed in the future.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tsunami_file_string</strong> (<em>string</em>) – Basename of the of the SCALE outfiles file to read.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tsunami_file_string</strong> (<em>string</em>) – Basename of the of the SCALE outfiles file to read.</p></li>
+<li><p><strong>pixel_array</strong> (<em>object array</em>) – Array of pixel objects describing the problem geometry.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>data</strong> – Nested dictionary where first set of keys are scale material id numbers, then second set of keys are nuclides.
@@ -320,7 +323,7 @@ For a given material/isotope key-set, 4 values are given as a tuple: (sensitivit
         <li class="right" >
           <a href="pixel.html" title="Pixel"
              >previous</a> &nbsp; &nbsp;</li>
-    <li><a href="../index.html">ADAM 0.1 documentation</a> &#187;</li>
+    <li><a href="../index.html">ADAM 1.0.2 documentation</a> &#187;</li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >Source API</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SCALE Interface</a></li> 
