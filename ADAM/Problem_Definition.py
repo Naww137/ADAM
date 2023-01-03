@@ -141,7 +141,7 @@ class Problem_Definition:
 
 
 
-    def objective_derivative(self, derivative_df, parameter_df):
+    def objective_derivative(self, derivative_df, parameter_df, keff):
         """
         Gets the derivative of the objective function given derivatives of k-effective with respect to the density factors (summed number density).
 
@@ -188,8 +188,8 @@ class Problem_Definition:
         parameter_np = np.array(parameter_df)
         
 
-        ### calculate obeject derivative using user passed function
-        obj_derivative_np = self.obj_derivative(parameter_np, derivative_np, Nbase_np)
+        ### calculate object derivative using user passed function
+        obj_derivative_np = self.obj_derivative(parameter_np, derivative_np, Nbase_np, keff)
 
         ### put objective function derivatives into dataframe 
         obj_derivative_df = pd.DataFrame(obj_derivative_np, columns=np.array(parameter_df.columns))
