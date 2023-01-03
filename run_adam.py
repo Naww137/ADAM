@@ -137,6 +137,7 @@ pdef = Problem_Definition.Problem_Definition('tsunami_template_11x11.inp', mater
                                                                             parameter_definition,
                                                                             generations, temperature,
                                                                             initial_parameter_df,
+                                                                            max_parameters,
 
                                                                             transformation_function,
                                                                             obj_derivative,

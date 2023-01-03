@@ -21,6 +21,7 @@ class Problem_Definition:
                                         parameter_definition,
                                         generations, temperature,
                                         initial_parameter_df,
+                                        max_parameters,
 
                                         transformation,
                                         obj_derivative,
@@ -32,6 +33,7 @@ class Problem_Definition:
         self.number_of_pixels = number_of_pixels
         self.region_definition = region_definition
         self.parameter_definition = parameter_definition
+        self.max_parameters = max_parameters
 
         ### init material df
         self.material_df_base = pd.DataFrame(material_dict_base)
