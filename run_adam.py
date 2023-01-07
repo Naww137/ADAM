@@ -10,17 +10,17 @@ import os
 
 # number_of_pixels = 1936
 # number_of_pixels = 400
-# number_of_pixels = 289
-number_of_pixels = 121
+number_of_pixels = 289
+# number_of_pixels = 121
 
 ### Define geometric regions (repeating regions in this case) and the materials present within each
-# region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
-region_definition = {'whole_pixel':['fuel','moderator']}
+region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
+# region_definition = {'whole_pixel':['fuel','moderator']}
 # region_definition = {'whole_pixel':['fuelmodmix']}
 
 ### Define the optimization parameters corresponding to the geometric region definition
-# parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
-parameter_definition = {'whole_pixel':['theta0','theta1']}
+parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
+# parameter_definition = {'whole_pixel':['theta0','theta1']}
 # parameter_definition = {'whole_pixel':['theta0']}
 
 material_dict_base = { 
@@ -62,9 +62,9 @@ max_parameters = max(len(v) for k,v in parameter_definition.items())
 initial_parameter_df = pd.DataFrame()
 for i in range(max_parameters):
     if i == 0:
-        initial_parameter_df[f'theta{i}'] = np.ones([number_of_pixels])*-0.2
+        initial_parameter_df[f'theta{i}'] = np.ones([number_of_pixels])*0.2
     else:
-        initial_parameter_df[f'theta{i}'] = np.ones([number_of_pixels])*2
+        initial_parameter_df[f'theta{i}'] = np.ones([number_of_pixels])*-4
     initial_parameter_df[f'mt{i}'] = np.zeros([number_of_pixels])
     initial_parameter_df[f'vt{i}'] = np.zeros([number_of_pixels])
 
@@ -74,12 +74,12 @@ def transformation_function(x):
 
 # Nbase_np and keff are passed in when this function is called, you don't have to use them
 def obj_derivative(parameter_np, derivative_np, Nbase_np, keff):
-    r = 1/100
-    v = 1
-    limit = 61*(4**2)
-    M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
-    dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
-    obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
+    # r = 1/100
+    # v = 1
+    # limit = 61*(4**2)
+    # M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
+    # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
+    # obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
 
     # r=7
     # v=60
@@ -95,7 +95,7 @@ def obj_derivative(parameter_np, derivative_np, Nbase_np, keff):
     # obj_derivative_np = derivative_np - (-r*v*np.exp(-v*(beta_limit+parameter_np)) + r*v*np.exp(v*(parameter_np-beta_limit)))
 
     # p3 with sigmoid and no penalty
-    # obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2)
+    obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2)
     
     # p2 with sigmoid and penalty for total mass
     # r = 1/100
@@ -119,8 +119,9 @@ def obj_derivative(parameter_np, derivative_np, Nbase_np, keff):
 
 options = { 'Write Output'  :   True, 
             'Build Input'   :   True, 
-            'Submit Job'    :   False,
+            'Submit Job'    :   True,
             'Run Geometry Check' : False,
+            'Use Starting Fission Source' : True,
 
             'beta 1'    :   0.9, 
             'beta 2'    :   0.999,
@@ -131,7 +132,7 @@ options = { 'Write Output'  :   True,
 generations = 10 
 temperature = 300
 
-pdef = Problem_Definition.Problem_Definition('tsunami_template_11x11.inp', material_dict_base,
+pdef = Problem_Definition.Problem_Definition('spent_fuel_cask_template.inp', material_dict_base,
                                                                             number_of_pixels, 
                                                                             region_definition,
                                                                             parameter_definition,

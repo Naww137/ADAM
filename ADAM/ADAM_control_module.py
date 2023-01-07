@@ -50,7 +50,7 @@ def Create_New_Input(pixel_array, parameter_df, pdef, step):
         hex_number = hex_number [2:]
         
         # create input file from template file - no material data
-        scale_interface.create_tsunami_input(pdef.template_file, 'tsunami_job.inp', step, hex_number, pdef.generations)
+        scale_interface.create_tsunami_input(pdef.template_file, 'tsunami_job.inp', step, hex_number, pdef.generations, pdef.starting_fission_source_bool)
         
         # write each pixel's material data to the target input file
         with open('tsunami_job.inp', 'r') as f:

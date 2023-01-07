@@ -161,7 +161,7 @@ def get_combined_derivatives(pixel_array, material_dict_base):
 
 
 
-def create_tsunami_input(template_file, input_file, step, hex_number, generations):
+def create_tsunami_input(template_file, input_file, step, hex_number, generations, starting_fission_source_bool):
     """
     Creates a tsunami input file from the template file with a random number seed, adds number of generations and removes read source input if on the first step.
 
@@ -177,6 +177,8 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
         Python generated random number seed.
     generations : int
         Monte Carlo generations to be run in each step.
+    starting_fission_source_bool : bool
+        Boolean logic to utilize the previous steps fission distribution as the starting distribution for the next.
 
     Returns
     -------
@@ -187,11 +189,41 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
     with open(template_file, 'r') as f:
         readlines = f.readlines()
         f.close()
-        
-    with open(input_file, 'w') as f:
-        
-        if step == 1:
-            for line in readlines[3:]:
+    
+    if starting_fission_source_bool: 
+
+        with open(input_file, 'w') as f:
+            if step == 1:
+                for line in readlines[3:]:
+                    if line.startswith('read start'):
+                        pass
+                    elif line.startswith('nst=9'):
+                        pass
+                    elif line.startswith('mss=fissionSource.msl'):
+                        pass
+                    elif line.startswith('end start'):
+                        pass
+                    elif line.startswith('nsk=1'):
+                        f.write('nsk=10\n')                   
+                    elif line.startswith('gen='):
+                        f.write(f'gen={generations+10}\n')                    
+                    elif line.startswith('rnd='):
+                        f.write(f'rnd={hex_number}\n')                    
+                    else:
+                        f.write(line)
+            else:
+                for line in readlines:
+                    if line.startswith('rnd='):
+                        f.write(f'rnd={hex_number}\n')                  
+                    elif line.startswith('gen='):
+                        f.write(f'gen={generations}\n')
+                    else:
+                        f.write(line)
+            
+    elif not starting_fission_source_bool: 
+
+        with open(input_file, 'w') as f:
+            for line in readlines[3:-12]:
                 if line.startswith('read start'):
                     pass
                 elif line.startswith('nst=9'):
@@ -200,20 +232,15 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
                     pass
                 elif line.startswith('end start'):
                     pass
+                # elif line.startswith('read gridGeometry'):
+                #     pass
+
                 elif line.startswith('nsk=1'):
                     f.write('nsk=10\n')                   
                 elif line.startswith('gen='):
                     f.write(f'gen={generations+10}\n')                    
                 elif line.startswith('rnd='):
                     f.write(f'rnd={hex_number}\n')                    
-                else:
-                    f.write(line)
-        else:
-            for line in readlines:
-                if line.startswith('rnd='):
-                    f.write(f'rnd={hex_number}\n')                  
-                elif line.startswith('gen='):
-                    f.write(f'gen={generations}\n')
                 else:
                     f.write(line)
     
