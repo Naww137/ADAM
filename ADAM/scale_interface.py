@@ -193,7 +193,7 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
     if starting_fission_source_bool: 
         if run_shift:
             raise ValueError('Cannot run shift with a starting fission source - must update template for this feature to be compatible with shift')
-            
+
         with open(input_file, 'w') as f:
             if step == 1:
                 for line in readlines[3:]:
@@ -242,7 +242,7 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
 
                 elif line.startswith('=tsunami-3d-k5'):
                     if run_shift:
-                        f.write(f'{line}-shift\n')
+                        f.write(f'=tsunami-3d-k5-shift\n')
                     else:
                         f.write(line)
 
