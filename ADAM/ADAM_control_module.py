@@ -50,7 +50,7 @@ def Create_New_Input(pixel_array, parameter_df, pdef, step):
         hex_number = hex_number [2:]
         
         # create input file from template file - no material data
-        scale_interface.create_tsunami_input(pdef.template_file, 'tsunami_job.inp', step, hex_number, pdef.generations, pdef.starting_fission_source_bool)
+        scale_interface.create_tsunami_input(pdef.template_file, 'tsunami_job.inp', step, hex_number, pdef.generations, pdef.starting_fission_source_bool, pdef.run_shift)
         
         # write each pixel's material data to the target input file
         with open('tsunami_job.inp', 'r') as f:
@@ -194,7 +194,10 @@ def run(step, pixel_array, pdef, output_filepath):
         ### Read output of MC simulation
         # outputs keff and writes derivative dfs to each respective pixel
         # derivatives are absolute but wrt to each nuclide within each region
-        keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job", pixel_array)
+        if pdef.run_shift:
+            keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job_ifp", pixel_array)
+        else:
+            keff = scale_interface.read_total_sensitivity_by_nuclide("tsunami_job", pixel_array)
         with open(output_filepath, 'a') as f:
             f.write(f"{step-1}, {keff}\n")
 

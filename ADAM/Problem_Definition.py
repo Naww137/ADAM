@@ -55,6 +55,7 @@ class Problem_Definition:
                                             'Submit Job'    :   True,
                                             'Run Geometry Check' : False,
                                             'Use Starting Fission Source' : True,
+                                            'Run Shift' : False,
 
                                             'beta 1'    :   0.9, 
                                             'beta 2'    :   0.999,
@@ -85,6 +86,7 @@ class Problem_Definition:
         self.epsilon = ADAM_rtp['epsilon']
         self.alpha_value = ADAM_rtp['alpha']
         self.starting_fission_source_bool = ADAM_rtp['Use Starting Fission Source']
+        self.run_shift = ADAM_rtp['Run Shift']
 
 
 

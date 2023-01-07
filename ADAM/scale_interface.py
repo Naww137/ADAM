@@ -161,7 +161,7 @@ def get_combined_derivatives(pixel_array, material_dict_base):
 
 
 
-def create_tsunami_input(template_file, input_file, step, hex_number, generations, starting_fission_source_bool):
+def create_tsunami_input(template_file, input_file, step, hex_number, generations, starting_fission_source_bool, run_shift):
     """
     Creates a tsunami input file from the template file with a random number seed, adds number of generations and removes read source input if on the first step.
 
@@ -191,7 +191,9 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
         f.close()
     
     if starting_fission_source_bool: 
-
+        if run_shift:
+            raise ValueError('Cannot run shift with a starting fission source - must update template for this feature to be compatible with shift')
+            
         with open(input_file, 'w') as f:
             if step == 1:
                 for line in readlines[3:]:
@@ -203,7 +205,7 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
                         pass
                     elif line.startswith('end start'):
                         pass
-                    
+
                     elif line.startswith('nsk=1'):
                         f.write('nsk=10\n')                   
                     elif line.startswith('gen='):
@@ -237,6 +239,12 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
                     pass
                 elif line.startswith('scd='):
                     pass
+
+                elif line.startswith('=tsunami-3d-k5'):
+                    if run_shift:
+                        f.write(f'{line}-shift\n')
+                    else:
+                        f.write(line)
 
                 elif line.startswith('nsk=1'):
                     f.write('nsk=10\n')                   
