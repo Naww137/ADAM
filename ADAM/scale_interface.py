@@ -203,6 +203,7 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
                         pass
                     elif line.startswith('end start'):
                         pass
+                    
                     elif line.startswith('nsk=1'):
                         f.write('nsk=10\n')                   
                     elif line.startswith('gen='):
@@ -232,8 +233,10 @@ def create_tsunami_input(template_file, input_file, step, hex_number, generation
                     pass
                 elif line.startswith('end start'):
                     pass
-                # elif line.startswith('read gridGeometry'):
-                #     pass
+                elif line.startswith('cds='):
+                    pass
+                elif line.startswith('scd='):
+                    pass
 
                 elif line.startswith('nsk=1'):
                     f.write('nsk=10\n')                   
