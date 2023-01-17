@@ -195,7 +195,7 @@ class Problem_Definition:
         
 
         ### calculate object derivative using user passed function
-        obj_derivative_np = self.obj_derivative(parameter_np, derivative_np, Nbase_np, keff)
+        obj_derivative_np = self.obj_derivative(parameter_np, derivative_np, Nbase_np, keff, step)
 
         ### put objective function derivatives into dataframe 
         obj_derivative_df = pd.DataFrame(obj_derivative_np, columns=np.array(parameter_df.columns))
