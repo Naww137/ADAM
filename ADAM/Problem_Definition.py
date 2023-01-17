@@ -147,7 +147,7 @@ class Problem_Definition:
 
 
 
-    def objective_derivative(self, derivative_df, parameter_df, keff):
+    def objective_derivative(self, derivative_df, parameter_df, keff, step):
         """
         Gets the derivative of the objective function given derivatives of k-effective with respect to the density factors (summed number density).
 
