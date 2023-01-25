@@ -116,7 +116,7 @@ def read_total_sensitivity_by_nuclide(tsunami_file_string, pixel_array):
 
             # scale relative sensitivities by atom_dens/keff
             for isotope, atom_dens in each_pixel.updated_region_materials[region]['combined'].loc[each_pixel.updated_region_materials[region]['combined'] != 0].items():
-                absolute_sensitivity = data[scale_material_id][isotope][0]*atom_dens/keff
+                absolute_sensitivity = data[scale_material_id][isotope][0]*keff/atom_dens
                 data[scale_material_id][isotope].extend([atom_dens, absolute_sensitivity])
 
             each_pixel.sensitivity_data_by_nuclide[region] = data[scale_material_id]

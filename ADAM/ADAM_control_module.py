@@ -167,7 +167,7 @@ def run(step, pixel_array, pdef, output_filepath):
                 output_file.write("step, keff\n")
             parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
 
-            keff=0
+        keff=0
 
     else:
         # If at step > 1:
