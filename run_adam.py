@@ -12,7 +12,7 @@ import os
 # number_of_pixels = 400
 number_of_pixels = 289
 # number_of_pixels = 121
-# number_of_pixels = 2
+# number_of_pixels = 1
 
 ### Define geometric regions (repeating regions in this case) and the materials present within each
 region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
@@ -85,14 +85,17 @@ material_dict_base = {
                                                                                 }
 
 # %% Initial parameters
-max_parameters = len(np.unique(np.array([(v) for k,v in parameter_definition.items()])))
-# max_parameters = max(len(v) for k,v in parameter_definition.items())
+max_parameters = len(np.unique(np.concatenate([np.array(v) for k,v in parameter_definition.items()]).ravel()))
+# starting_thetas = pd.read_csv('./starting_thetas.csv')
+
 initial_parameter_df = pd.DataFrame()
 for i in range(max_parameters):
     if i == 0:
         initial_parameter_df[f'theta{i}'] = np.ones([number_of_pixels])*0  # np.random.default_rng().integers(-3,3,number_of_pixels)  #
+        # initial_parameter_df[f'theta{i}'] = starting_thetas.theta0
     else:
         initial_parameter_df[f'theta{i}'] =  np.ones([number_of_pixels])*0 #np.random.default_rng().integers(-3,3,number_of_pixels)  #
+        # initial_parameter_df[f'theta{i}'] = starting_thetas.theta1
     initial_parameter_df[f'mt{i}'] = np.zeros([number_of_pixels])
     initial_parameter_df[f'vt{i}'] = np.zeros([number_of_pixels])
 
@@ -126,15 +129,17 @@ def obj_derivative(parameter_np, derivative_np, Nbase_np, keff, step):
     # obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2)
     
     # sigmoid with saddle function penalty (crit safety problem)
-    dP_dxy = (4*parameter_np-2)*1e-6
+    dP_dxy = (4*parameter_np-2)*1e-5
     dP_dyx = dP_dxy
     dP_dyx[:,[1,0]] = dP_dxy[:,[0,1]] #reverse col for dp
     dxy_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
     dP_dtheta = dP_dyx*dxy_dtheta
-    obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2) + dP_dtheta
 
-    np.save(dP_dtheta, f'./dP_dtheta_step{step}.npy')
-    np.save(-derivative_np, f'./dernp_step{step}.npy')
+    dk_dtheta = -derivative_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2) 
+    obj_derivative_np = dk_dtheta + dP_dtheta
+
+    np.save(f'./parameter_data/dP_dtheta_step{step}.npy',dP_dtheta)
+    np.save(f'./parameter_data/dk_dtheta_step{step}.npy',dk_dtheta)
     
     # p2 with sigmoid and penalty for total mass
     # r = 1/100
@@ -156,7 +161,7 @@ def obj_derivative(parameter_np, derivative_np, Nbase_np, keff, step):
 
 #%% Define optional ADAM runtime parameters and initialize a problem definition object
 
-options = { 'Write Output'  :   True, 
+options = { 'Write Output'  :   False, 
             'Build Input'   :   True, 
             'Submit Job'    :   False,
             'Run Geometry Check' : False,
@@ -172,7 +177,7 @@ options = { 'Write Output'  :   True,
 generations = 10 
 temperature = 300
 
-pdef = Problem_Definition.Problem_Definition('spent_fuel_cask_template.inp', material_dict_base,
+pdef = Problem_Definition.Problem_Definition('spent_fuel_cask_single_cell_template.inp', material_dict_base,
                                                                             number_of_pixels, 
                                                                             region_definition,
                                                                             parameter_definition,
@@ -207,7 +212,7 @@ else:
 
 
 ### Run ADAM 
-while step < 500:
+while step < 3:
 
     keff = ADAM_control_module.run(step, pixel_array, pdef, output_filepath)
 
