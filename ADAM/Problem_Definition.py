@@ -18,6 +18,7 @@ class Problem_Definition:
     def __init__(self,  template_filename, material_dict_base,
                                         number_of_pixels, 
                                         region_definition,
+                                        region_volume_fraction,
                                         parameter_definition,
                                         generations, temperature,
                                         initial_parameter_df,
@@ -32,6 +33,7 @@ class Problem_Definition:
         ### init geometry
         self.number_of_pixels = number_of_pixels
         self.region_definition = region_definition
+        self.region_volume_fraction = region_volume_fraction
         self.parameter_definition = parameter_definition
         self.max_parameters = max_parameters
 
