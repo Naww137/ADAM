@@ -1,6 +1,4 @@
 
-
-from ADAM import derivatives
 import pandas as pd
 
 
@@ -109,12 +107,9 @@ class pixel:
             for material, optimization_parameter in zip(self.region_definition[f'{region}'], self.parameter_definition[f'{region}']):
                 
                 material_derivative = 0
-                absolute_sensitivity_by_parameter = {}
                 for isotope in material_dict_base[material].keys():
-                    absolute_sensitivity_by_parameter[isotope] = self.sensitivity_data_by_nuclide[region][isotope][3] # 3rd unit is absolute derivative
-                    atom_fraction = material_dict_base[material][isotope]/sum(material_dict_base[material].values()) # combination must be weighted by atom fraction
-                    material_derivative += absolute_sensitivity_by_parameter[isotope]*atom_fraction # 3rd unit is absolute derivative
-                material_derivative = material_derivative*sum(material_dict_base['fuel'].values())
+                    absolute_sensitivity_for_isotope = self.sensitivity_data_by_nuclide[region][isotope][3] # 3rd unit is absolute derivative
+                    material_derivative += absolute_sensitivity_for_isotope*material_dict_base[material][isotope] # multiply by specific isotope density - or multiply density ratio, then at the end multiply by sum(material) because chain rule dk/df=dk/dm*dm/df, multiply by sum cancels out divide by sum in ratio 
                 # 
                 if optimization_parameter in derivatives_per_region:
                     derivatives_per_region[optimization_parameter][region]=material_derivative
