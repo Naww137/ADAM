@@ -16,9 +16,11 @@ number_of_pixels = 289
 
 ### Define geometric regions (repeating regions in this case) and the materials present within each
 region_definition = {'rod':['fuel','moderator'], 'gap':['moderator'], 'clad':['zircalloy','moderator']}
+region_volfrac = {'rod':0.7435885207756233, 'gap':0.030811479224376666, 'clad':0.22560000000000005}
 # region_definition = {'left':['fuel'], 'right':['moderator']}
-### region_definition = {'whole_pixel':['fuel','moderator']}
-### region_definition = {'whole_pixel':['fuelmodmix']}
+## region_definition = {'whole_pixel':['fuel','moderator']}
+# region_volfrac = {'whole_pixel':1.0}
+# region_definition = {'whole_pixel':['fuelmodmix']}
 
 ### Define the optimization parameters corresponding to the geometric region definition
 parameter_definition = {'rod':['theta0','theta1'], 'gap':['theta1'], 'clad':['theta0','theta1']}
@@ -91,10 +93,10 @@ max_parameters = len(np.unique(np.concatenate([np.array(v) for k,v in parameter_
 initial_parameter_df = pd.DataFrame()
 for i in range(max_parameters):
     if i == 0:
-        initial_parameter_df[f'theta{i}'] = np.ones([number_of_pixels])*0  # np.random.default_rng().integers(-3,3,number_of_pixels)  #
+        initial_parameter_df[f'theta{i}'] = np.random.uniform(low=-2,high=2,size=number_of_pixels) # np.ones([number_of_pixels])*0  # np.random.default_rng().integers(-3,3,number_of_pixels)  #
         # initial_parameter_df[f'theta{i}'] = starting_thetas.theta0
     else:
-        initial_parameter_df[f'theta{i}'] =  np.ones([number_of_pixels])*0 #np.random.default_rng().integers(-3,3,number_of_pixels)  #
+        initial_parameter_df[f'theta{i}'] =   np.random.uniform(low=-2,high=2,size=number_of_pixels)  #np.ones([number_of_pixels])*0 #np.random.default_rng().integers(-3,3,number_of_pixels)  #
         # initial_parameter_df[f'theta{i}'] = starting_thetas.theta1
     initial_parameter_df[f'mt{i}'] = np.zeros([number_of_pixels])
     initial_parameter_df[f'vt{i}'] = np.zeros([number_of_pixels])
@@ -105,17 +107,6 @@ def transformation_function(x):
 
 # Nbase_np and keff are passed in when this function is called, you don't have to use them
 def obj_derivative(parameter_np, derivative_np, Nbase_np, keff, step):
-    # r = 1/100
-    # v = 1
-    # limit = 61*(4**2)
-    # M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
-    # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
-    # obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
-
-    # r=7
-    # v=60
-    # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
-    # obj_derivative_np = dM_dtheta - v*r*np.exp((v*(1-keff)))*derivative_np*dM_dtheta
 
     ### put through derivative of objective function
 
@@ -129,7 +120,7 @@ def obj_derivative(parameter_np, derivative_np, Nbase_np, keff, step):
     # obj_derivative_np = -derivative_np * Nbase_np * (np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2)
     
     # sigmoid with saddle function penalty (crit safety problem)
-    dP_dxy = (4*parameter_np-2)*1e-5
+    dP_dxy = (4*parameter_np-2)*1e-3
     dP_dyx = dP_dxy
     dP_dyx[:,[1,0]] = dP_dxy[:,[0,1]] #reverse col for dp
     dxy_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
@@ -144,10 +135,10 @@ def obj_derivative(parameter_np, derivative_np, Nbase_np, keff, step):
     # p2 with sigmoid and penalty for total mass
     # r = 1/100
     # v = 1
-    # limit = 61*(4**2)
-    # M = np.sum(1/(1+np.exp(-parameter_np))); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
+    # limit = 61 # *(4**2)
+    # M = np.sum(transformation_function(parameter_np)); assert len(parameter_np[0])==1, "Mass Constraint objective function must be updated if you want to use two parameters"
     # dM_dtheta = np.exp(-parameter_np)/(1+np.exp(-parameter_np))**2
-    # obj_derivative_np = - derivative_np*Nbase_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
+    # obj_derivative_np = - derivative_np*dM_dtheta + r*np.exp(v*(M-limit))*v*dM_dtheta
 
     # p2 inverse with sigmoid and penalty for k>=1
     # r = 100
@@ -180,6 +171,7 @@ temperature = 300
 pdef = Problem_Definition.Problem_Definition('spent_fuel_cask_single_cell_template.inp', material_dict_base,
                                                                             number_of_pixels, 
                                                                             region_definition,
+                                                                            region_volfrac,
                                                                             parameter_definition,
                                                                             generations, temperature,
                                                                             initial_parameter_df,
@@ -199,10 +191,10 @@ output_filepath = os.path.join(os.getcwd(), "run_adam.outfile")
 ### Initialize pixel array
 pixel_array = []
 for i in range(pdef.number_of_pixels):
-    pixel_array.append(pixel.pixel(pdef.region_definition, pdef.parameter_definition, pdef.material_df_base, i+1, pdef.temperature))
+    pixel_array.append(pixel.pixel(pdef.region_definition, pdef.region_volume_fraction, pdef.parameter_definition, pdef.material_df_base, i+1, pdef.temperature))
 
 ### Input starting step
-step = 1
+step = 16
 if step == 1:
     with open(output_filepath, 'w') as f:
         f.write("Welcome to ADAM!\nYou have just started running, this file will print updates for each step\n")
@@ -212,7 +204,7 @@ else:
 
 
 ### Run ADAM 
-while step < 3:
+while step < 25:
 
     keff = ADAM_control_module.run(step, pixel_array, pdef, output_filepath)
 
