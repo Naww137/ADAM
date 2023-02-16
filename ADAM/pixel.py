@@ -109,7 +109,7 @@ class pixel:
                 material_derivative = 0
                 for isotope in material_dict_base[material].keys():
                     absolute_sensitivity_for_isotope = self.sensitivity_data_by_nuclide[region][isotope][3] # 3rd unit is absolute derivative
-                    material_derivative += absolute_sensitivity_for_isotope*material_dict_base[material][isotope] # multiply by specific isotope density - or multiply density ratio, then at the end multiply by sum(material) because chain rule dk/df=dk/dm*dm/df, multiply by sum cancels out divide by sum in ratio 
+                    material_derivative += absolute_sensitivity_for_isotope*material_dict_base[material][isotope]#/sum(material_dict_base[material].values()) # multiply by specific isotope density - or multiply density ratio, then at the end multiply by sum(material) because chain rule dk/df=dk/dm*dm/df, multiply by sum cancels out divide by sum in ratio 
                 # 
                 if optimization_parameter in derivatives_per_region:
                     derivatives_per_region[optimization_parameter][region]=material_derivative
