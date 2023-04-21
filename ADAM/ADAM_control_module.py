@@ -189,7 +189,7 @@ def run(step, pixel_array, pdef, output_filepath):
             cluster_interface.submit_jobs_to_necluster('tsunami_job')
             cluster_interface.wait_on_submitted_job('tsunami_job', output_filepath)
             cluster_interface.remove_unwanted_files()
-
+            cluster_interface.check_outfiles_or_rerun('tsunami_job', output_filepath)
 
         ### Read output of MC simulation
         # outputs keff and writes derivative dfs to each respective pixel
@@ -201,8 +201,10 @@ def run(step, pixel_array, pdef, output_filepath):
         with open(output_filepath, 'a') as f:
             f.write(f"{step-1}, {keff}\n")
 
-
-        ### if output is not correct, re-run
+        ### Remove previous out files
+        if pdef.submit_job:
+            cluster_interface.remove_out_files()
+        
 
 
         ### Combine derivatives to get them wrt optimization parameters

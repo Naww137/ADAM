@@ -99,8 +99,23 @@ def wait_on_submitted_job(file_name_flag, output_filepath):
         f.close()
 
 def remove_unwanted_files():
-    # os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *.html *.htmd *.sh* *.sdf *.txt *.3dmap')
+    # os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *.html *.htmd *.sh.* *.sdf *.txt *.3dmap')
     os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *job.sh.*"')
+
+
+def remove_out_files():
+    os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *job.out *job.sdf"')
+
+
+def check_outfiles_or_rerun(tsunami_file_string,output_filepath):
+    if os.path.isfile(f'{tsunami_file_string}.sdf') and os.path.isfile(f'{tsunami_file_string}.out'):
+        return
+    else:
+        submit_jobs_to_necluster(tsunami_file_string)
+        wait_on_submitted_job(tsunami_file_string, output_filepath)
+        remove_unwanted_files()
+
+    return
 
 
 
