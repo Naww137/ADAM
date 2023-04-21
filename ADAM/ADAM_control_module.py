@@ -186,6 +186,7 @@ def run(step, pixel_array, pdef, output_filepath):
 
         ### Run the MC simulation
         if pdef.submit_job:
+            cluster_interface.remove_out_files()
             cluster_interface.submit_jobs_to_necluster('tsunami_job')
             cluster_interface.wait_on_submitted_job('tsunami_job', output_filepath)
             cluster_interface.remove_unwanted_files()
@@ -218,10 +219,6 @@ def run(step, pixel_array, pdef, output_filepath):
         ### Perform the ADAM update to get new parameters (remember, this is a minimization)
         parameter_df = ADAM_update_parameter_df(pdef, parameter_df, obj_derivative_df, step-1)
 
-         ### Remove previous out files
-        if pdef.submit_job:
-            cluster_interface.remove_out_files()
-            
         # write new parameters
         if pdef.write_output:
             parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
