@@ -201,11 +201,6 @@ def run(step, pixel_array, pdef, output_filepath):
         with open(output_filepath, 'a') as f:
             f.write(f"{step-1}, {keff}\n")
 
-        ### Remove previous out files
-        if pdef.submit_job:
-            cluster_interface.remove_out_files()
-        
-
 
         ### Combine derivatives to get them wrt optimization parameters
         # wrt nuclides and region combined to derivatives wrt multiplication factors applied to compound for the entire region (chain rule)
@@ -223,6 +218,10 @@ def run(step, pixel_array, pdef, output_filepath):
         ### Perform the ADAM update to get new parameters (remember, this is a minimization)
         parameter_df = ADAM_update_parameter_df(pdef, parameter_df, obj_derivative_df, step-1)
 
+         ### Remove previous out files
+        if pdef.submit_job:
+            cluster_interface.remove_out_files()
+            
         # write new parameters
         if pdef.write_output:
             parameter_df.to_csv(f'parameter_data/parameters_{step}.csv', index=False)
