@@ -92,7 +92,7 @@ def wait_on_submitted_job(file_name_flag, output_filepath):
                     #time.sleep(5)
                     f.write("Job complete! Continuing...\n")
                     return
-                if '.sh.' in file:
+                if 'job.sh.' in file:
                     f.write("Cluster job finished, checking output files \n")
                     return
 
