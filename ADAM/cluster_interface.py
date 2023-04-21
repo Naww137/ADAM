@@ -108,7 +108,7 @@ def remove_unwanted_files():
 
 
 def remove_out_files():
-    os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *job.out *job.sdf"')
+    os.system('ssh -tt necluster.ne.utk.edu "cd ' + os.getcwd() + ' && rm -rf *job.out *.sdf"')
 
 
 def check_outfiles_or_rerun(tsunami_file_string,output_filepath):
