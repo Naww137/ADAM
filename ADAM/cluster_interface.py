@@ -71,6 +71,7 @@ def submit_jobs_to_necluster(file_name_flag):
         if "_done" in file:
             os.remove(file)
 
+    remove_unwanted_files()
     ### Submitting current file script
     current_Dir = os.getcwd()
     os.system('ssh -tt necluster.ne.utk.edu "cd ' + current_Dir + ' && qsub ' + file_name_flag + '.sh' + '"')
@@ -90,6 +91,9 @@ def wait_on_submitted_job(file_name_flag, output_filepath):
                 if '_done' in file:
                     #time.sleep(5)
                     f.write("Job complete! Continuing...\n")
+                    return
+                if '.sh.' in file:
+                    f.write("Cluster job finished, checking output files \n")
                     return
 
             f.write(f"Not yet complete, waiting 60 seconds. Total: {total_time/60} minutes\n")
